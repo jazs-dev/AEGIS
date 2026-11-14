@@ -1,0 +1,41 @@
+/* Tipografía del sistema: sin descargas de fuentes ni recursos externos. */
+.stApp {
+    font-family: "Bahnschrift", "DIN Alternate", "Segoe UI", Arial, sans-serif;
+}
+.block-container {
+    max-width: 420px;
+    padding-top: 3rem;
+}
+.aegis-identity {
+    margin-bottom: 1.25rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid #39424c;
+}
+.aegis-identity h1 {
+    font-family: "Bahnschrift", "DIN Alternate", "Segoe UI", Arial, sans-serif;
+    font-size: 2rem;
+    font-weight: 650;
+    letter-spacing: .2em;
+    line-height: 1.2;
+    margin: 0 0 .55rem;
+    padding: 0;
+    color: #edf2f7;
+}
+.aegis-identity p {
+    font-family: "Bahnschrift", "DIN Alternate", "Segoe UI", Arial, sans-serif;
+    font-size: .75rem;
+    font-weight: 400;
+    letter-spacing: .035em;
+    line-height: 1.5;
+    margin: 0;
+    color: #a8b5c3;
+}
+.stTextInput input, .stButton button, .stFormSubmitButton button {
+    font-family: "Bahnschrift", "DIN Alternate", "Segoe UI", Arial, sans-serif;
+}
+.stFormSubmitButton button {
+    min-height: 3.25rem;
+    font-size: 1rem;
+    font-weight: 600;
+    letter-spacing: .06em;
+}

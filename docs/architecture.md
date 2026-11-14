@@ -34,12 +34,35 @@ Streamlit será responsable de:
 ### Arquitectura propuesta
 
 - `app.py`: punto de entrada de la aplicación.
+- `src/auth/`: validación de credenciales, independiente de la interfaz.
+- `src/ui/`: configuración visual y navegación; `views/` contiene las pantallas.
+- `assets/styles/`: hojas de estilo locales.
+- `.streamlit/`: configuración de Streamlit.
 - `src/processing/`: procesamiento de señales fisiológicas.
 - `src/algorithms/`: algoritmos matemáticos y estadísticos.
 - `src/monitoring/`: evaluación de indicadores y generación de alertas.
 - `data/`: conjuntos de datos de prueba.
 - `tests/`: pruebas automatizadas.
 - `docs/`: documentación técnica.
+
+La regla de organización por carpetas se mantiene en `AGENTS.md` para los siguientes cambios.
+
+### Ejecutar el acceso inicial
+
+Desde la raíz, ejecutar `.venv/bin/python -m streamlit run app.py`.
+Sin configuración se activa el modo demostración con usuario `astronauta` y contraseña
+`ISS-demo-2026`, visibles en la pantalla. El acceso abre una bienvenida protegida;
+el panel de monitoreo todavía no está implementado.
+
+Para usar credenciales locales propias, definir ambas variables de entorno
+`ISS_USERNAME` e `ISS_PASSWORD` antes de iniciar Streamlit. Si solo se define una,
+el acceso se rechaza y la cuenta demo queda desactivada. No guardar secretos en Git.
+Este acceso es un prototipo local de una cuenta: no incluye registro de usuarios,
+recuperación de contraseña, bloqueo por intentos ni un proveedor de identidad.
+La sesión se conserva durante las interacciones de Streamlit y se elimina al cerrar
+sesión; no hay inicio persistente tras recargar la conexión del navegador.
+
+Verificar el flujo con `.venv/bin/python -m pytest tests/auth -q`.
 
 ### Consideraciones
 
