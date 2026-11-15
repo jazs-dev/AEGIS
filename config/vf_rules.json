@@ -1,0 +1,141 @@
+{
+  "model": "ventricular_fibrillation_monitoring",
+  "version": "0.2.0",
+  "purpose": "simulation_only",
+  "input_schema": "variable_definitions.json",
+  "states_schema": "vf_states.json",
+  "evaluation": {
+    "strategy": "first_matching_rule_by_priority",
+    "all_ten_variables_must_be_reported": true,
+    "base_sensor_variables": [
+      "heart_rate_status",
+      "spo2_status",
+      "respiratory_rate_status",
+      "blood_pressure_status",
+      "ecg_quality",
+      "rhythm_classification",
+      "qrs_status",
+      "pulse_status"
+    ],
+    "additional_clinical_evidence_variables": [
+      "responsiveness_status",
+      "breathing_status"
+    ],
+    "unavailable_values_are_explicit_categories": true,
+    "required_conditions_mean": "all_of",
+    "allowed_values_mean": "any_of",
+    "supporting_conditions_are_not_required": true,
+    "no_match_action": "retain_previous_state_and_flag_unclassified",
+    "vf_evaluation": "immediate_when_ecg_features_available"
+  },
+  "rules": [
+    {
+      "id": "R01",
+      "priority": 1,
+      "output_state": "VF_CARDIAC_ARREST",
+      "required": {
+        "ecg_quality": ["valid"],
+        "rhythm_classification": ["vf_compatible"],
+        "qrs_status": ["not_organized"],
+        "pulse_status": ["absent"],
+        "responsiveness_status": ["unresponsive"],
+        "breathing_status": ["absent", "agonal"]
+      },
+      "supporting": {
+        "heart_rate_status": ["not_reliably_calculable"],
+        "spo2_status": ["potentially_unreliable", "unreliable_without_perfusion"],
+        "respiratory_rate_status": ["bradypnea", "abnormal", "not_assessed"],
+        "blood_pressure_status": ["low", "unmeasurable", "not_assessed"]
+      },
+      "clinical_interpretation": "SIMULATED_VF_WITH_DOCUMENTED_ABSENT_PULSE_AND_CLINICAL_EVIDENCE_NOT_INDEPENDENT_DIAGNOSIS",
+      "safety_note": "ECG evidence plus absent pulse and clinical evidence is still a simulation state, not an autonomous diagnosis."
+    },
+    {
+      "id": "R02",
+      "priority": 2,
+      "output_state": "SUSPECTED_VF",
+      "required": {
+        "ecg_quality": ["valid"],
+        "rhythm_classification": ["vf_compatible"],
+        "qrs_status": ["not_organized"]
+      },
+      "supporting": {
+        "heart_rate_status": ["not_reliably_calculable"],
+        "spo2_status": ["potentially_unreliable", "unreliable_without_perfusion"],
+        "respiratory_rate_status": ["abnormal", "bradypnea", "not_assessed"],
+        "blood_pressure_status": ["low", "unmeasurable", "not_assessed"],
+        "pulse_status": ["absent", "unreliable", "not_assessed"],
+        "responsiveness_status": ["responsive", "unresponsive", "not_assessed"],
+        "breathing_status": ["normal", "absent", "agonal", "abnormal", "not_assessed"]
+      }
+    },
+    {
+      "id": "R03",
+      "priority": 3,
+      "output_state": "SIGNAL_INVALID",
+      "required": {
+        "ecg_quality": ["invalid"]
+      },
+      "supporting": {
+        "heart_rate_status": ["unreliable", "not_assessed"],
+        "rhythm_classification": ["uninterpretable"],
+        "qrs_status": ["uninterpretable"],
+        "responsiveness_status": ["responsive", "unresponsive", "not_assessed"],
+        "breathing_status": ["normal", "absent", "agonal", "abnormal", "not_assessed"]
+      },
+      "warning": "Invalid ECG cannot exclude a cardiac emergency; other clinical measurements remain independent."
+    },
+    {
+      "id": "R04",
+      "priority": 4,
+      "output_state": "ABNORMAL_RHYTHM",
+      "required": {
+        "ecg_quality": ["valid"],
+        "rhythm_classification": ["abnormal_non_vf"]
+      },
+      "supporting": {
+        "heart_rate_status": ["tachycardia", "bradycardia", "irregular"],
+        "qrs_status": ["organized", "abnormal"],
+        "blood_pressure_status": ["stable", "elevated", "low", "altered"],
+        "spo2_status": ["adequate", "altered"],
+        "respiratory_rate_status": ["normal_for_context", "tachypnea", "bradypnea", "abnormal"],
+        "pulse_status": ["present", "altered"],
+        "responsiveness_status": ["responsive", "not_assessed"],
+        "breathing_status": ["normal", "abnormal", "not_assessed"]
+      }
+    },
+    {
+      "id": "R05",
+      "priority": 5,
+      "output_state": "NORMAL_MONITORING",
+      "required": {
+        "ecg_quality": ["valid"],
+        "rhythm_classification": ["normal_sinus"],
+        "qrs_status": ["organized"],
+        "heart_rate_status": ["normal_for_context"],
+        "spo2_status": ["adequate"],
+        "respiratory_rate_status": ["normal_for_context"],
+        "blood_pressure_status": ["stable"],
+        "pulse_status": ["present"],
+        "responsiveness_status": ["responsive"],
+        "breathing_status": ["normal"]
+      }
+    }
+  ],
+  "safety_constraints": {
+    "pulse_absent_with_invalid_ecg": "flag_possible_emergency_independently_of_ecg_state",
+    "do_not_wait_for_blood_pressure_or_spo2_to_flag_suspected_vf": true,
+    "clinical_recovery_can_not_be_inferred_from_ecg_alone": true,
+    "cardiac_arrest_confirmation_requires": [
+      "ecg_quality=valid",
+      "rhythm_classification=vf_compatible",
+      "qrs_status=not_organized",
+      "pulse_status=absent",
+      "responsiveness_status=unresponsive",
+      "breathing_status in [absent, agonal]"
+    ],
+    "missing_blood_pressure_is_not_absent_circulation": true,
+    "unreliable_spo2_is_not_absent_circulation": true,
+    "suspected_vf_does_not_wait_for_complementary_measurements": true
+  }
+}

@@ -1,0 +1,208 @@
+{
+  "model": "ventricular_fibrillation_monitoring",
+  "version": "0.2.0",
+  "purpose": "simulation_only",
+  "initial_state": "SIGNAL_INVALID",
+  "evaluation": {
+    "periodic_monitoring": {
+      "interval_seconds": 5,
+      "applies_to": ["NORMAL_MONITORING", "ABNORMAL_RHYTHM", "SIGNAL_INVALID"]
+    },
+    "immediate_evaluation": {
+      "triggers": [
+        "ecg_quality becomes valid with rhythm evidence",
+        "rhythm_classification becomes vf_compatible",
+        "pulse_status becomes absent"
+      ],
+      "priority": "evaluate_highest_priority_matching_transition_before_periodic_transition"
+    }
+  },
+  "priority_order": [
+    "VF_CARDIAC_ARREST",
+    "SUSPECTED_VF",
+    "SIGNAL_INVALID",
+    "ABNORMAL_RHYTHM",
+    "NORMAL_MONITORING"
+  ],
+  "external_controls": {
+    "authorized_clinical_reset": {
+      "type": "explicit_boolean",
+      "source": "authorized_clinical_operator",
+      "required_for_exiting_vf_cardiac_arrest": true,
+      "cannot_be_inferred_from_ecg": true
+    }
+  },
+  "transitions": [
+    {
+      "id": "T01",
+      "from": ["NORMAL_MONITORING", "ABNORMAL_RHYTHM", "SUSPECTED_VF", "SIGNAL_INVALID"],
+      "to": "VF_CARDIAC_ARREST",
+      "priority": 1,
+      "evaluation": "immediate",
+      "conditions": {
+        "all_of": {
+          "ecg_quality": ["valid"],
+          "rhythm_classification": ["vf_compatible"],
+          "qrs_status": ["not_organized"],
+          "pulse_status": ["absent"],
+          "responsiveness_status": ["unresponsive"],
+          "breathing_status": ["absent", "agonal"]
+        }
+      },
+      "safety_note": "Requires ECG evidence and independent clinical evidence; blood pressure and SpO2 are not required for this priority transition."
+    },
+    {
+      "id": "T02",
+      "from": ["NORMAL_MONITORING", "ABNORMAL_RHYTHM", "SIGNAL_INVALID"],
+      "to": "SUSPECTED_VF",
+      "priority": 2,
+      "evaluation": "immediate",
+      "conditions": {
+        "all_of": {
+          "ecg_quality": ["valid"],
+          "rhythm_classification": ["vf_compatible"],
+          "qrs_status": ["not_organized"]
+        }
+      },
+      "safety_note": "Do not wait for blood pressure, SpO2, pulse, or respiratory measurements to produce this suspected state."
+    },
+    {
+      "id": "T03",
+      "from": ["NORMAL_MONITORING", "ABNORMAL_RHYTHM", "SUSPECTED_VF"],
+      "to": "SIGNAL_INVALID",
+      "priority": 3,
+      "evaluation": "immediate",
+      "conditions": {
+        "all_of": {
+          "ecg_quality": ["invalid"]
+        }
+      },
+      "safety_note": "Invalid ECG does not clear an existing clinical emergency; independent measurements remain relevant."
+    },
+    {
+      "id": "T04",
+      "from": ["SIGNAL_INVALID", "SUSPECTED_VF"],
+      "to": "ABNORMAL_RHYTHM",
+      "priority": 4,
+      "evaluation": "periodic_or_on_new_evidence",
+      "conditions": {
+        "all_of": {
+          "ecg_quality": ["valid"],
+          "rhythm_classification": ["abnormal_non_vf"]
+        }
+      }
+    },
+    {
+      "id": "T05",
+      "from": ["SIGNAL_INVALID", "ABNORMAL_RHYTHM", "SUSPECTED_VF"],
+      "to": "NORMAL_MONITORING",
+      "priority": 5,
+      "evaluation": "periodic_or_on_new_evidence",
+      "conditions": {
+        "all_of": {
+          "ecg_quality": ["valid"],
+          "rhythm_classification": ["normal_sinus"],
+          "qrs_status": ["organized"],
+          "heart_rate_status": ["normal_for_context"],
+          "spo2_status": ["adequate"],
+          "respiratory_rate_status": ["normal_for_context"],
+          "blood_pressure_status": ["stable"],
+          "pulse_status": ["present"],
+          "responsiveness_status": ["responsive"],
+          "breathing_status": ["normal"]
+        }
+      }
+    },
+    {
+      "id": "T06",
+      "from": ["VF_CARDIAC_ARREST"],
+      "to": "VF_CARDIAC_ARREST",
+      "priority": 1,
+      "evaluation": "immediate",
+      "conditions": {
+        "all_of": {
+          "ecg_quality": ["valid"],
+          "rhythm_classification": ["vf_compatible"],
+          "qrs_status": ["not_organized"],
+          "pulse_status": ["absent"]
+        }
+      },
+      "safety_note": "The state is retained while the arrest evidence remains present."
+    },
+    {
+      "id": "T07",
+      "from": ["VF_CARDIAC_ARREST"],
+      "to": "SIGNAL_INVALID",
+      "priority": 2,
+      "evaluation": "immediate",
+      "conditions": {
+        "all_of": {
+          "authorized_clinical_operator": [true],
+          "post_event_circulation_assessment": ["completed"],
+          "ecg_quality": ["invalid"]
+        }
+      },
+      "safety_note": "Signal normalization alone cannot produce this exit; an authorized clinical reset and post-event assessment are required."
+    },
+    {
+      "id": "T08",
+      "from": ["VF_CARDIAC_ARREST"],
+      "to": "SUSPECTED_VF",
+      "priority": 2,
+      "evaluation": "immediate",
+      "conditions": {
+        "all_of": {
+          "authorized_clinical_operator": [true],
+          "post_event_circulation_assessment": ["completed"],
+          "ecg_quality": ["valid"],
+          "rhythm_classification": ["vf_compatible"],
+          "qrs_status": ["not_organized"],
+          "pulse_status": ["present", "unreliable", "not_assessed"]
+        }
+      },
+      "safety_note": "This is a controlled post-event transition, not an inferred recovery."
+    },
+    {
+      "id": "T09",
+      "from": ["VF_CARDIAC_ARREST"],
+      "to": "ABNORMAL_RHYTHM",
+      "priority": 2,
+      "evaluation": "immediate",
+      "conditions": {
+        "all_of": {
+          "authorized_clinical_operator": [true],
+          "post_event_circulation_assessment": ["completed"],
+          "ecg_quality": ["valid"],
+          "rhythm_classification": ["abnormal_non_vf"]
+        }
+      },
+      "safety_note": "This is a controlled post-event transition, not an inferred recovery."
+    },
+    {
+      "id": "T10",
+      "from": ["VF_CARDIAC_ARREST"],
+      "to": "NORMAL_MONITORING",
+      "priority": 2,
+      "evaluation": "periodic_or_on_new_evidence",
+      "conditions": {
+        "all_of": {
+          "authorized_clinical_operator": [true],
+          "post_event_circulation_assessment": ["completed"],
+          "ecg_quality": ["valid"],
+          "rhythm_classification": ["normal_sinus"],
+          "qrs_status": ["organized"],
+          "pulse_status": ["present"],
+          "responsiveness_status": ["responsive"],
+          "breathing_status": ["normal"]
+        }
+      },
+      "safety_note": "A post-arrest clinical assessment and explicit authorization are mandatory; ECG normalization alone is insufficient."
+    }
+  ],
+  "safety_constraints": {
+    "normalization_of_ecg_alone_cannot_exit_vf_cardiac_arrest": true,
+    "missing_blood_pressure_is_not_absent_circulation": true,
+    "unreliable_spo2_is_not_absent_circulation": true,
+    "suspected_vf_is_immediate_when_ecg_features_are_available": true
+  }
+}
