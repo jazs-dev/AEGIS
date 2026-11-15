@@ -1,0 +1,74 @@
+
+{
+  "model": "ventricular_fibrillation_monitoring",
+  "version": "0.4.0",
+  "purpose": "simulation_only",
+
+  "states": {
+    "NORMAL_MONITORING": {
+      "heart_rate_status": "normal_for_context",
+      "spo2_status": "adequate",
+      "respiratory_rate_status": "normal_for_context",
+      "blood_pressure_status": "stable",
+      "ecg_quality": "valid",
+      "rhythm_classification": "normal_sinus",
+      "qrs_status": "organized",
+      "pulse_status": "present",
+      "responsiveness": "responsive",
+      "breathing_status": "normal"
+    },
+
+    "ABNORMAL_RHYTHM": {
+      "heart_rate_status": "tachycardia_or_bradycardia_or_irregular",
+      "spo2_status": "adequate_or_altered",
+      "respiratory_rate_status": "normal_or_altered",
+      "blood_pressure_status": "stable_or_altered",
+      "ecg_quality": "valid",
+      "rhythm_classification": "abnormal_non_vf",
+      "qrs_status": "organized_or_abnormal",
+      "pulse_status": "present_or_altered",
+      "responsiveness": "responsive_or_altered",
+      "breathing_status": "normal_or_altered"
+    },
+
+    "SUSPECTED_VF": {
+      "heart_rate_status": "not_reliably_calculable",
+      "spo2_status": "potentially_unreliable",
+      "respiratory_rate_status": "abnormal_or_not_assessed",
+      "blood_pressure_status": "low_or_unmeasurable",
+      "ecg_quality": "valid",
+      "rhythm_classification": "vf_compatible",
+      "qrs_status": "not_organized",
+      "pulse_status": "absent_or_not_assessed",
+      "responsiveness": "unresponsive_or_not_assessed",
+      "breathing_status": "absent_agonal_or_not_assessed"
+    },
+
+    "VF_CARDIAC_ARREST": {
+      "heart_rate_status": "not_reliably_calculable",
+      "spo2_status": "unreliable_without_perfusion",
+      "respiratory_rate_status": "absent_or_agonal",
+      "blood_pressure_status": "no_effective_pressure",
+      "ecg_quality": "valid",
+      "rhythm_classification": "vf_compatible",
+      "qrs_status": "not_organized",
+      "pulse_status": "absent",
+      "responsiveness": "unresponsive",
+      "breathing_status": "absent_or_agonal"
+    },
+
+    "SIGNAL_INVALID": {
+      "heart_rate_status": "unreliable_if_ecg_derived",
+      "spo2_status": "independently_assessed",
+      "respiratory_rate_status": "independently_assessed",
+      "blood_pressure_status": "independently_assessed",
+      "ecg_quality": "invalid",
+      "rhythm_classification": "uninterpretable",
+      "qrs_status": "uninterpretable",
+      "pulse_status": "independently_assessed",
+      "responsiveness": "independently_assessed",
+      "breathing_status": "independently_assessed"
+    }
+  }
+}
+
