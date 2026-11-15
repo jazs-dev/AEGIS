@@ -145,6 +145,7 @@ Comprobar el comportamiento de los algoritmos mediante pruebas reproducibles, da
 ## 8. Documentación
 
 - [Arquitectura del software](docs/architecture.md)
+- [Estado de desarrollo](docs/development_status.md)
 - [Fundamentación científica](docs/scientific_foundation.md)
 - [Catálogo de condiciones médicas](docs/medical_conditions_catalog.md)
 

@@ -69,7 +69,7 @@ Estas funciones constituyen una demostración de interfaz; no equivalen a monito
 ## 4. Módulos pendientes
 
 - Definir una API interna para lecturas fisiológicas y señales ECG.
-- Implementar carga y validación de configuraciones JSON.
+- Implementar carga y validación de configuraciones JSON en Python; la estructura declarativa ya está documentada y probada.
 - Integrar el esquema ya definido de `vf_transitions.json` en un cargador de configuración.
 - Implementar procesamiento de señales en `src/processing/`.
 - Implementar clasificación de variables en `src/algorithms/` usando las reglas de `config/`.
@@ -91,7 +91,7 @@ python -m pytest -q
 Resultado observado:
 
 ```text
-2 passed in 3.41s
+11 passed in 3.12s
 ```
 
 Las pruebas actuales están en `tests/auth/test_login.py` y cubren:
@@ -103,6 +103,8 @@ Las pruebas actuales están en `tests/auth/test_login.py` y cubren:
 - cierre de sesión.
 
 Se añadieron pruebas de configuración en `tests/config/test_configuration.py`. Estas validan sintaxis JSON, categorías atómicas, referencias de variables, compatibilidad entre reglas y estados, prioridades y referencias de transiciones.
+
+La documentación arquitectónica se amplió en `docs/architecture.md` con el flujo híbrido, contratos de datos, responsabilidades por capa, límites del procesamiento ECG y cuatro diagramas Mermaid.
 
 Todavía no existen pruebas para procesamiento, algoritmos, monitoreo o la interfaz completa.
 
