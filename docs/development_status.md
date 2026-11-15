@@ -9,7 +9,7 @@
 
 El repositorio contiene un prototipo funcional de interfaz Streamlit con autenticación local de demostración, un dashboard de monitoreo visual y documentación científica preliminar. La interfaz puede ejecutarse y las pruebas existentes pasan.
 
-El procesamiento de señales, los algoritmos de clasificación y el monitoreo todavía no están implementados. Las carpetas `src/processing/`, `src/algorithms/` y `src/monitoring/` contienen únicamente sus archivos `__init__.py`.
+La primera capa de procesamiento fisiológico ya está implementada en `src/processing/`. El procesamiento ECG, la detección de FV, el motor de reglas, la máquina de estados y el monitoreo todavía no están implementados.
 
 Los archivos de configuración médica de `config/` todavía no son consumidos por el código. En esta etapa se normalizó su contrato interno y se añadió validación automatizada, pero la capa continúa siendo configuración de simulación y no un motor clínico validado.
 
@@ -40,15 +40,23 @@ Los archivos de configuración médica de `config/` todavía no son consumidos p
 - `.streamlit/config.toml` define el tema oscuro, el modo de toolbar y el comportamiento del file watcher.
 - `assets/styles/main.css` contiene los estilos de la interfaz.
 
-### Separación prevista, todavía no implementada
+### Separación prevista, parcialmente implementada
 
 La arquitectura documentada reserva responsabilidades independientes para:
 
-- `src/processing/`: carga, validación, limpieza y transformación de señales.
+- `src/processing/`: carga de configuración y validación/clasificación de mediciones fisiológicas; el procesamiento ECG aún está pendiente.
 - `src/algorithms/`: extracción de características, clasificación y detección de anomalías.
 - `src/monitoring/`: evaluación de estados, reglas, alertas y trazabilidad.
 
-Actualmente esas capas no tienen lógica funcional.
+`src/algorithms/` y `src/monitoring/` todavía no tienen lógica funcional. `src/processing/` cuenta con la primera capa fisiológica descrita a continuación.
+
+### Procesamiento fisiológico implementado
+
+- `src/processing/config_loader.py` localiza, carga y valida los seis JSON sin depender del directorio de ejecución ni de Streamlit.
+- `src/processing/measurement_validator.py` valida tipo numérico, finitud, unidades opcionales, disponibilidad, dominios configurados y consistencia sistólica/diastólica.
+- `src/processing/variable_classifier.py` evalúa de forma restringida las expresiones numéricas de `classification_rules.json` y produce categorías atómicas.
+
+La salida incluye variable, valor original, unidad, categoría, validez, regla coincidente y explicación. La validez distingue `valid`, `not_assessed`, `invalid` y `out_of_domain`.
 
 ## 3. Funcionalidades disponibles
 
@@ -69,14 +77,13 @@ Estas funciones constituyen una demostración de interfaz; no equivalen a monito
 ## 4. Módulos pendientes
 
 - Definir una API interna para lecturas fisiológicas y señales ECG.
-- Implementar carga y validación de configuraciones JSON en Python; la estructura declarativa ya está documentada y probada.
-- Integrar el esquema ya definido de `vf_transitions.json` en un cargador de configuración.
-- Implementar procesamiento de señales en `src/processing/`.
+- Integrar el cargador de configuración y la clasificación fisiológica con una fuente de mediciones o dataset reproducible.
+- Implementar procesamiento ECG y extracción de características en `src/processing/` y `src/algorithms/`.
 - Implementar clasificación de variables en `src/algorithms/` usando las reglas de `config/`.
 - Implementar la máquina de estados y las alertas en `src/monitoring/`.
 - Conectar resultados de procesamiento y monitoreo con el dashboard.
 - Incorporar datasets de prueba reproducibles.
-- Agregar pruebas unitarias de configuración, procesamiento, reglas, transiciones y monitoreo.
+- Agregar pruebas unitarias de ECG, reglas, transiciones y monitoreo.
 - Definir criterios de calidad de señal, manejo de valores faltantes y trazabilidad de alertas.
 - Validar científicamente cada regla antes de presentarla como resultado médico.
 
@@ -91,7 +98,7 @@ python -m pytest -q
 Resultado observado:
 
 ```text
-11 passed in 3.12s
+46 passed in 2.92s
 ```
 
 Las pruebas actuales están en `tests/auth/test_login.py` y cubren:
@@ -106,7 +113,9 @@ Se añadieron pruebas de configuración en `tests/config/test_configuration.py`.
 
 La documentación arquitectónica se amplió en `docs/architecture.md` con el flujo híbrido, contratos de datos, responsabilidades por capa, límites del procesamiento ECG y cuatro diagramas Mermaid.
 
-Todavía no existen pruebas para procesamiento, algoritmos, monitoreo o la interfaz completa.
+Las pruebas nuevas en `tests/processing/test_processing.py` cubren límites inclusivos y exclusivos, valores normales, valores faltantes, tipos incorrectos, `NaN`, infinitos, unidades incompatibles, dominios inválidos, presión sistólica menor que diastólica, expresiones mal formadas, reglas ambiguas y archivos de configuración faltantes o inválidos.
+
+Todavía no existen pruebas para procesamiento ECG, algoritmos de ritmo, monitoreo, máquina de estados o la interfaz completa.
 
 También se verificó que Python puede importar directamente `src.ui.views.login` y que la instalación actual usa Python 3.12.15 y Streamlit 1.67.0.
 
@@ -136,15 +145,18 @@ El cambio local de `config/fv_states.json` se incorporó a la revisión de confi
 
 ## 7. Estado de Git
 
-La rama actual es `features/config`.
+La rama actual es `features/physiological-processing`, creada desde el `HEAD` validado de `features/config`.
 
-El commit actual es:
+El commit base de la rama es:
 
 ```text
-97b8f3b feat(login): alerta de usuario incorrecto y visualizacion de info
+6b9af54 docs: document deterministic monitoring architecture
 ```
 
 Commits recientes revisados:
+
+- `6b9af54` — documentación de la arquitectura determinista.
+- `e442ec7` — configuración y validación de monitorización FV.
 
 - `97b8f3b` — alerta de usuario incorrecto y visualización de información.
 - `ec184a5` — estados de fibrilación ventricular.
@@ -163,14 +175,11 @@ origin https://github.com/jazs-dev/AEGIS.git
 Estado local pendiente al finalizar esta etapa:
 
 ```text
- M config/fv_states.json
-?? config/classification_rules.json
-?? config/ecg_classification.json
-?? config/variable_definitions.json
-?? config/vf_rules.json
-?? config/vf_transitions.json
-?? docs/development_status.md
-?? tests/config/
+ M docs/development_status.md
+?? src/processing/config_loader.py
+?? src/processing/measurement_validator.py
+?? src/processing/variable_classifier.py
+?? tests/processing/
 ```
 
 No se ejecutaron `git reset`, `git clean`, checkout destructivo, commit ni push.
@@ -179,13 +188,18 @@ No se ejecutaron `git reset`, `git clean`, checkout destructivo, commit ni push.
 
 ### Riesgos del código
 
-- La lógica médica todavía no está separada en módulos ejecutables; las reglas JSON no tienen un evaluador.
+- Las reglas de FV y las transiciones JSON todavía no tienen un evaluador Python; la capa implementada solo clasifica variables fisiológicas numéricas.
 - La señal ECG es sintética y no representa datos clínicos reales.
 - Una lectura aislada no permite diagnosticar una condición médica.
 - El estado `VF_CARDIAC_ARREST` no debe inferirse únicamente a partir del ECG; requiere información de pulso y evaluación clínica independiente.
 - Las pruebas actuales validan consistencia estructural, pero no validan la corrección clínica de los criterios ECG.
 - `vf_transitions.json` contiene un intervalo periódico de simulación, no un requisito de tiempo clínicamente validado.
 - Las categorías `vf_compatible`, `normal_sinus` y `abnormal_non_vf` siguen dependiendo de algoritmos futuros y no tienen umbrales matemáticos definidos en la configuración.
+- El clasificador actual solo procesa frecuencia cardiaca, SpO₂, frecuencia respiratoria y presión arterial; no interpreta ECG ni categorías clínicas de pulso, respuesta o respiración.
+- Los valores negativos de frecuencia cardiaca, SpO₂ y frecuencia respiratoria se marcan `out_of_domain` conforme al dominio explícito de la configuración; no se agregaron límites clínicos superiores no definidos.
+- La regla de presión arterial `altered` funciona como fallback cuando no coincide `low`, `stable` o `elevated`; la semántica clínica de ese fallback requiere validación posterior.
+- La expresión de bradicardia (`<60`) se solapa matemáticamente con la expresión de frecuencia cardiaca inválida (`<0`). El validador resuelve primero el dominio de entrada y marca valores negativos como `out_of_domain`, evitando una coincidencia ambigua sin modificar el JSON.
+- La categoría `invalid` de presión arterial existe en `variable_definitions.json`, pero no tiene una regla numérica específica en `classification_rules.json`; se utiliza únicamente cuando la validación detecta tipo, finitud, unidad o consistencia inválida.
 
 ### Riesgos de seguridad y operación
 
@@ -200,18 +214,16 @@ Las versiones están fijadas en `requirements.txt`. Entre las dependencias decla
 
 ## 9. Próximas etapas recomendadas
 
-1. Revisar con el equipo el contenido y procedencia de todos los archivos de `config/`.
-2. Implementar un cargador de configuración con errores explícitos.
-3. Implementar primero funciones puras de clasificación de variables, sin importar Streamlit.
-4. Implementar la evaluación de reglas y transiciones con casos de prueba.
-5. Definir y validar matemáticamente los criterios de calidad ECG, QRS y ritmo.
-6. Añadir procesamiento de ECG y validación de calidad de señal, manteniendo las limitaciones médicas documentadas.
-7. Añadir una capa de monitoreo que produzca estados y alertas explicables.
-8. Conectar el dashboard a resultados de monitoreo mediante una interfaz estable.
-9. Añadir datasets de prueba y métricas de evaluación reproducibles.
-10. Revisar dependencias y resolver el comportamiento de recarga de Streamlit antes de usar la aplicación como demostración estable.
+1. Integrar `src/processing/` con una fuente de mediciones o dataset reproducible.
+2. Definir y validar matemáticamente los criterios de calidad ECG, QRS y ritmo.
+3. Añadir procesamiento ECG y extracción de características, manteniendo las limitaciones documentadas.
+4. Implementar el motor de reglas y la máquina de estados con pruebas independientes.
+5. Añadir una capa de monitoreo que produzca estados y alertas explicables.
+6. Conectar el dashboard a resultados de monitoreo mediante una interfaz estable.
+7. Añadir datasets de prueba y métricas de evaluación reproducibles.
+8. Revisar dependencias y resolver el comportamiento de recarga de Streamlit antes de usar la aplicación como demostración estable.
 
 ## 10. Criterio de continuación
 
-El siguiente cambio de implementación debería ser un componente independiente de carga y validación de configuración, acompañado de pruebas. No debería modificar todavía la interfaz ni interpretar datos médicos hasta que los criterios matemáticos ECG estén definidos y validados.
+El siguiente cambio de implementación debería definir y validar matemáticamente la calidad ECG, QRS y ritmo. No debería modificar todavía la interfaz ni implementar detección de FV hasta que existan criterios reproducibles y datasets de evaluación.
 
