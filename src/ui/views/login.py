@@ -36,7 +36,7 @@ def render_login() -> None:
     with st.form("crew_login"):
         st.text_input("Username", key="login_username")
         st.text_input("Password", type="password", key="login_password")
-        st.form_submit_button("Login", on_click=_submit_login, use_container_width=True)
+        st.form_submit_button("Login", on_click=_submit_login, width="stretch")
     if st.session_state.get("login_error"):
         st.error(st.session_state["login_error"])
     if demo_mode():

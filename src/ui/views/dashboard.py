@@ -47,7 +47,7 @@ def render_ecg_chart(ecg_data: pd.DataFrame | None = None) -> None:
     """Render ECG data supplied by a dataset or a clearly marked demo signal."""
     chart_data = ecg_data if ecg_data is not None else _simulated_ecg()
     st.markdown("**ECG**")
-    st.line_chart(chart_data, height=170, use_container_width=True)
+    st.line_chart(chart_data, height=170, width="stretch")
     if ecg_data is None:
         st.caption("Simulated signal · placeholder for dataset integration")
 
