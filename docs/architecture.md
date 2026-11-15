@@ -17,6 +17,7 @@ El sistema no es un dispositivo médico validado. Las categorías `vf_compatible
 - Seis archivos JSON de configuración coherentes y validados por pruebas declarativas.
 - Pruebas de autenticación y de integridad de configuración.
 - Motor determinista de reglas, máquina de estados finitos y coordinador de monitoreo sin dependencia de Streamlit.
+- Simulador reproducible de mediciones fisiológicas y categorías ECG/clinicas sintéticas en `src/simulation/`.
 
 ### Diseñado, pero no implementado
 
@@ -74,7 +75,7 @@ flowchart LR
 | Monitoreo | Estado, evidencia e historial | Registrar, priorizar y exponer alertas experimentales | Evento de monitoreo explicable |
 | Dashboard | Resultado de monitoreo | Presentar valores, calidad, señal, estado y advertencias | Interfaz visual |
 
-La adquisición real y el procesamiento ECG son diseño futuro. La validación/clasificación fisiológica, el motor de reglas, la máquina de estados y el coordinador de monitoreo ya están implementados de forma independiente de Streamlit. El dashboard todavía presenta una señal ECG sintética y valores placeholder.
+La adquisición real y el procesamiento ECG son diseño futuro. La simulación reproducible, la validación/clasificación fisiológica, el motor de reglas, la máquina de estados y el coordinador de monitoreo ya están implementados de forma independiente de Streamlit. El dashboard todavía presenta una señal ECG sintética y valores placeholder.
 
 ## 4. Configuración JSON
 
@@ -234,7 +235,39 @@ El sistema debe distinguir cinco niveles de representación:
 
 La aplicación actual no adquiere ninguna de estas variables: el dashboard muestra placeholders y una señal sintética. La tabla documenta la arquitectura de datos, no una capacidad existente.
 
-## 6. Procesamiento ECG y detección futura de FV
+## 6. Simulación reproducible
+
+`src/simulation/physiological_simulator.py` genera muestras sintéticas y puede ejecutar la cadena completa:
+
+**Muestra simulada → `classify_measurements()` → categorías ECG/clínicas simuladas → `Monitor.evaluate()` → estado candidato y estado efectivo.**
+
+Los cinco escenarios disponibles son los cinco nombres de estado actuales: `NORMAL_MONITORING`, `ABNORMAL_RHYTHM`, `SUSPECTED_VF`, `VF_CARDIAC_ARREST` y `SIGNAL_INVALID`. El escenario se conserva en metadatos y `expected_state_oracle` sirve únicamente como referencia de prueba; nunca se envía al monitor para seleccionar el estado.
+
+La configuración de simulación permite duración, intervalo, semilla, timestamp inicial y segmentos. Las mediciones fisiológicas se generan dentro de rangos compatibles con `classification_rules.json`, excepto valores diseñados para probar invalidez en `SIGNAL_INVALID`. Las categorías `ecg_categories` y `clinical_evidence` son entradas sintéticas explícitas, no resultados de un detector ECG.
+
+Ejemplo reproducible sin Streamlit:
+
+```python
+from datetime import datetime, timezone
+
+from src.simulation.physiological_simulator import SimulationConfig, run_simulation
+
+config = SimulationConfig(
+    scenario="SUSPECTED_VF",
+    duration_seconds=2,
+    interval_seconds=1,
+    seed=7,
+    start_time=datetime(2026, 1, 1, tzinfo=timezone.utc),
+)
+results = run_simulation(config)
+print(results[0].monitor_result.effective_state)
+```
+
+La simulación no genera autorizaciones clínicas automáticamente. Un control externo solo puede incluirse de forma explícita en un `ScenarioSegment` para probar una transición configurada.
+
+La política temporal existente se conserva: el monitor usa evaluaciones periódicas de cinco segundos y eleva evidencia de sospecha o emergencia a evaluación inmediata sin `sleep()`. Por eso una secuencia `NORMAL_MONITORING → ABNORMAL_RHYTHM` se registra como transición rechazada con la configuración actual; `T04` no permite ese origen. Una secuencia permitida para probar todos los cambios es `SIGNAL_INVALID → ABNORMAL_RHYTHM → SUSPECTED_VF → VF_CARDIAC_ARREST`, respetando el intervalo periódico.
+
+## 7. Procesamiento ECG y detección futura de FV
 
 El diseño futuro para una señal digital debe recibir, como mínimo, muestras ordenadas, frecuencia de muestreo, unidad, identificador de fuente y marcas temporales. Esas propiedades son requisitos de diseño; no están definidas todavía como un contrato JSON ni como una clase Python.
 
@@ -271,7 +304,7 @@ Las decisiones pendientes antes de programar incluyen:
 
 No se seleccionan umbrales en esta etapa. La ausencia de QRS detectables puede deberse a ruido, desconexión, saturación u otra señal no interpretable; no demuestra por sí sola fibrilación ventricular. La salida `vf_compatible` debe permanecer separada de la confirmación clínica de paro.
 
-## 7. Motor de reglas y máquina de estados
+## 8. Motor de reglas y máquina de estados
 
 ```mermaid
 stateDiagram-v2
@@ -309,6 +342,8 @@ El motor implementado evalúa primero las reglas por prioridad y conserva la reg
 
 La configuración actual declara un intervalo periódico de cinco segundos y evaluaciones inmediatas. El monitor acepta timestamps externos, no usa `sleep()` y omite una evaluación periódica si el intervalo no ha transcurrido. La configuración no define debounce, ventanas consecutivas, duración mínima de estado ni política de pérdida de muestras.
 
+La configuración actual tampoco declara una transición directa de `NORMAL_MONITORING` a `ABNORMAL_RHYTHM`: `T04` solo permite ese destino desde `SIGNAL_INVALID` o `SUSPECTED_VF`. Una simulación que solicite esa secuencia debe registrar la transición rechazada y conservar el estado efectivo; el simulador no debe sobrescribir esta restricción.
+
 El contrato futuro debería conservar, como mínimo:
 
 - estado anterior y estado nuevo;
@@ -323,7 +358,7 @@ El contrato futuro debería conservar, como mínimo:
 
 `VF_CARDIAC_ARREST` tiene una transición de retención mientras persiste la evidencia básica. Sus salidas `T07` a `T10` requieren `authorized_clinical_operator: true` y `post_event_circulation_assessment: completed`, además de la condición de destino correspondiente. La configuración declara explícitamente que la normalización ECG sola no puede inferir recuperación de circulación.
 
-## 8. Relación entre JSON y módulos Python
+## 9. Relación entre JSON y módulos Python
 
 ```mermaid
 flowchart LR
@@ -357,7 +392,7 @@ flowchart LR
 
 Los módulos marcados como futuros corresponden al procesamiento ECG. El código actual también tiene funcionales `src/processing/` y `src/monitoring/`, siempre sin integración con Streamlit.
 
-## 9. Separación de responsabilidades
+## 10. Separación de responsabilidades
 
 ### `src/processing/`
 
@@ -385,7 +420,7 @@ Responsabilidad actual: configuración visual, navegación, login visual, dashbo
 
 Responsabilidad actual: autenticación local de prototipo, independiente de la lógica fisiológica. No debe cargar configuración ECG ni participar en el motor de reglas.
 
-## 10. Contratos de datos
+## 11. Contratos de datos
 
 ### 10.1. Campos definidos actualmente
 
@@ -415,7 +450,7 @@ Los siguientes campos son propuestas de diseño y todavía no existen en archivo
 
 Estos contratos deben diseñarse como estructuras independientes de Streamlit. `confidence` no está definida en los JSON como criterio de decisión y no debe convertirse automáticamente en umbral clínico.
 
-## 11. Streamlit y presentación
+## 12. Streamlit y presentación
 
 El flujo de UI futuro debería recibir un registro de monitoreo ya calculado y mostrar:
 
@@ -430,7 +465,7 @@ El flujo de UI futuro debería recibir un registro de monitoreo ya calculado y m
 
 La interfaz actual no calcula QRS, interpreta `vf_score`, elige prioridades ni autoriza la salida de un estado de emergencia. Estas tareas pertenecen a las capas de procesamiento, algoritmos y monitoreo.
 
-## 12. Decisiones pendientes antes de implementar
+## 13. Decisiones pendientes antes de implementar
 
 1. Especificar el esquema formal de carga para los seis JSON.
 2. Definir la representación de timestamps, zonas horarias, frecuencia de muestreo y unidades.
@@ -443,7 +478,7 @@ La interfaz actual no calcula QRS, interpreta `vf_score`, elige prioridades ni a
 9. Establecer métricas de evaluación y casos adversariales.
 10. Revisar el comportamiento de recarga de Streamlit antes de una demostración estable.
 
-## 13. Ejecución actual
+## 14. Ejecución actual
 
 Desde la raíz del repositorio:
 
@@ -459,6 +494,6 @@ python -m pytest -q
 
 La aplicación actual muestra login, identidad y dashboard visual. Los módulos de procesamiento y monitoreo pueden ejecutarse de forma independiente, pero todavía no están conectados al dashboard.
 
-## 14. Alcance y seguridad
+## 15. Alcance y seguridad
 
 Este proyecto es un prototipo experimental de simulación. No constituye un dispositivo médico validado, no confirma fibrilación ventricular ni paro cardiaco y no reemplaza protocolos clínicos, personal sanitario o sistemas certificados. Toda alerta futura deberá presentarse como resultado experimental con evidencia, limitaciones y fuente de datos.

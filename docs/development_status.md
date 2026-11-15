@@ -2,14 +2,14 @@
 
 **Proyecto:** NASA Astronaut Health Monitor / AEGIS  
 **Fecha de referencia:** 2026-11-15  
-**Rama revisada:** `features/vf-decision-engine`
+**Rama revisada:** `features/physiological-simulation`
 **Propósito:** establecer una referencia técnica antes de continuar el desarrollo.
 
 ## 1. Resumen ejecutivo
 
 El repositorio contiene un prototipo funcional de interfaz Streamlit con autenticación local de demostración, un dashboard de monitoreo visual y documentación científica preliminar. La interfaz puede ejecutarse y las pruebas existentes pasan.
 
-La primera capa de procesamiento fisiológico, el motor determinista de reglas, la máquina de estados y el coordinador de monitoreo ya están implementados sin dependencia de Streamlit. El procesamiento ECG, la detección matemática de FV y la integración con el dashboard todavía no están implementados.
+La primera capa de procesamiento fisiológico, el motor determinista de reglas, la máquina de estados, el coordinador de monitoreo y un simulador reproducible ya están implementados sin dependencia de Streamlit. El procesamiento ECG, la detección matemática de FV y la integración con el dashboard todavía no están implementados.
 
 Los archivos de configuración médica de `config/` son cargados por el procesamiento y el monitoreo. La capa continúa siendo configuración de simulación y no un motor clínico validado.
 
@@ -63,6 +63,7 @@ La salida incluye variable, valor original, unidad, categoría, validez, regla c
 - `src/monitoring/rule_engine.py` evalúa las reglas `R01` a `R05` por prioridad, distingue `matched`, `no_match` e `indeterminate`, y conserva una traza de condiciones.
 - `src/monitoring/state_machine.py` aplica las transiciones `T01` a `T10`, conserva el estado efectivo y bloquea salidas de `VF_CARDIAC_ARREST` sin autorización y reevaluación.
 - `src/monitoring/monitor.py` coordina regla, transición, modo periódico/inmediato, timestamps externos e historial.
+- `src/simulation/physiological_simulator.py` genera mediciones, categorías ECG/clínicas sintéticas y secuencias reproducibles que alimentan el monitor existente.
 
 El monitor separa `candidate_state` de `effective_state`. Una entrada sin evidencia suficiente no inventa un estado: conserva el estado efectivo y registra la evaluación indeterminada.
 
@@ -87,6 +88,7 @@ Estas funciones constituyen una demostración de interfaz; no equivalen a monito
 - Definir una API interna para lecturas fisiológicas y señales ECG.
 - Integrar el cargador de configuración y la clasificación fisiológica con una fuente de mediciones o dataset reproducible.
 - Implementar procesamiento ECG y extracción de características en `src/processing/` y `src/algorithms/`.
+- Integrar el simulador con datasets o fuentes de mediciones externas cuando estén disponibles.
 - Conectar resultados de procesamiento y monitoreo con el dashboard.
 - Incorporar datasets de prueba reproducibles.
 - Agregar pruebas unitarias de ECG, reglas, transiciones y monitoreo.
@@ -104,7 +106,7 @@ python -m pytest -q
 Resultado observado:
 
 ```text
-62 passed in 3.30s
+80 passed in 3.27s
 ```
 
 Las pruebas actuales están en `tests/auth/test_login.py` y cubren:
@@ -122,6 +124,8 @@ La documentación arquitectónica se amplió en `docs/architecture.md` con el fl
 Las pruebas nuevas en `tests/processing/test_processing.py` cubren límites inclusivos y exclusivos, valores normales, valores faltantes, tipos incorrectos, `NaN`, infinitos, unidades incompatibles, dominios inválidos, presión sistólica menor que diastólica, expresiones mal formadas, reglas ambiguas y archivos de configuración faltantes o inválidos.
 
 Las pruebas nuevas en `tests/monitoring/test_monitoring.py` cubren los cinco estados, prioridad de paro sobre sospecha, evidencia faltante, categorías desconocidas, transiciones permitidas y prohibidas, retención de paro, salida autorizada, historial, intervalo periódico y evaluación inmediata.
+
+Las pruebas nuevas en `tests/simulation/test_physiological_simulator.py` cubren reproducibilidad por semilla, variación entre semillas, los cinco escenarios, mediciones faltantes e inválidas, integración con procesamiento y monitoreo, transiciones permitidas y rechazadas, retención de paro, controles externos explícitos y trazabilidad de muestras.
 
 Todavía no existen pruebas para procesamiento ECG, algoritmos matemáticos de ritmo o la integración con la interfaz completa.
 
@@ -153,17 +157,18 @@ Los seis JSON forman parte de la base validada de la rama. `responsiveness_statu
 
 ## 7. Estado de Git
 
-La rama actual es `features/vf-decision-engine`, creada desde el `HEAD` validado de `features/physiological-processing`.
+La rama actual es `features/physiological-simulation`, creada desde el `HEAD` validado de `features/vf-decision-engine`.
 
 El commit base de la rama es:
 
 ```text
-505835e feat(processing): implement deterministic physiological classification
+068fdeb feat(monitoring): implement VF rule engine and state machine
 ```
 
 Commits recientes revisados:
 
 - `505835e` — clasificación fisiológica determinista.
+- `068fdeb` — motor de reglas, máquina de estados y monitor.
 - `6b9af54` — documentación de la arquitectura determinista.
 - `e442ec7` — configuración y validación de monitorización FV.
 
@@ -186,10 +191,8 @@ Estado local pendiente al finalizar esta etapa:
 ```text
  M docs/architecture.md
  M docs/development_status.md
-?? src/monitoring/monitor.py
-?? src/monitoring/rule_engine.py
-?? src/monitoring/state_machine.py
-?? tests/monitoring/
+?? src/simulation/
+?? tests/simulation/
 ```
 
 No se ejecutaron `git reset`, `git clean`, checkout destructivo, commit ni push.
@@ -210,6 +213,7 @@ No se ejecutaron `git reset`, `git clean`, checkout destructivo, commit ni push.
 - La regla de presión arterial `altered` funciona como fallback cuando no coincide `low`, `stable` o `elevated`; la semántica clínica de ese fallback requiere validación posterior.
 - La expresión de bradicardia (`<60`) se solapa matemáticamente con la expresión de frecuencia cardiaca inválida (`<0`). El validador resuelve primero el dominio de entrada y marca valores negativos como `out_of_domain`, evitando una coincidencia ambigua sin modificar el JSON.
 - La categoría `invalid` de presión arterial existe en `variable_definitions.json`, pero no tiene una regla numérica específica en `classification_rules.json`; se utiliza únicamente cuando la validación detecta tipo, finitud, unidad o consistencia inválida.
+- `vf_transitions.json` no permite `NORMAL_MONITORING → ABNORMAL_RHYTHM`; `T04` solo parte de `SIGNAL_INVALID` o `SUSPECTED_VF`. La simulación conserva esta restricción y registra cualquier intento rechazado.
 
 ### Riesgos de seguridad y operación
 
@@ -224,13 +228,14 @@ Las versiones están fijadas en `requirements.txt`. Entre las dependencias decla
 
 ## 9. Próximas etapas recomendadas
 
-1. Integrar `src/processing/` con una fuente de mediciones o dataset reproducible.
+1. Integrar `src/simulation/` con datasets o fuentes de mediciones reproducibles adicionales.
 2. Definir y validar matemáticamente los criterios de calidad ECG, QRS y ritmo.
 3. Añadir procesamiento ECG y extracción de características, manteniendo las limitaciones documentadas.
-4. Definir la presentación de alertas experimentales y sus limitaciones.
-5. Conectar el dashboard a resultados de monitoreo mediante una interfaz estable.
-6. Añadir datasets de prueba y métricas de evaluación reproducibles.
-7. Revisar dependencias y resolver el comportamiento de recarga de Streamlit antes de usar la aplicación como demostración estable.
+4. Revisar si debe autorizarse explícitamente la transición `NORMAL_MONITORING → ABNORMAL_RHYTHM` en una futura versión de configuración.
+5. Definir la presentación de alertas experimentales y sus limitaciones.
+6. Conectar el dashboard a resultados de monitoreo mediante una interfaz estable.
+7. Añadir datasets de evaluación y métricas reproducibles.
+8. Revisar dependencias y resolver el comportamiento de recarga de Streamlit antes de usar la aplicación como demostración estable.
 
 ## 10. Criterio de continuación
 
