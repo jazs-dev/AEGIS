@@ -23,6 +23,7 @@ def test_login_rejection_session_and_logout(monkeypatch):
     app.text_input[1].input("incorrecta")
     app.button[0].click().run()
     assert app.error
+    assert app.error[0].value == "Incorrect username or password."
     assert len(app.text_input) == 2
     assert not app.success
     app.text_input[1].input("ISS-demo-2026")

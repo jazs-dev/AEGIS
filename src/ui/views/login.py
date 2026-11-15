@@ -13,12 +13,26 @@ def _submit_login() -> None:
         st.session_state["crew_username"] = username.strip()
         st.session_state.pop("login_error", None)
     else:
-        st.session_state["login_error"] = "Usuario o contraseña incorrectos."
+        st.session_state["login_error"] = "Incorrect username or password."
     st.session_state["login_password"] = ""
 
 
 def render_login() -> None:
-    st.html("<style>.block-container { max-width: 540px; }</style>")
+    st.html(
+        """
+        <style>
+            .block-container { max-width: 540px; }
+
+            /* Keep the login form clean: hide Streamlit's keyboard hint and
+               the password visibility toggle. */
+            div[data-testid="stForm"] [data-testid="InputInstructions"],
+            div[data-testid="stForm"] button[aria-label="Show password"],
+            div[data-testid="stForm"] button[aria-label="Hide password"] {
+                display: none !important;
+            }
+        </style>
+        """
+    )
     with st.form("crew_login"):
         st.text_input("Username", key="login_username")
         st.text_input("Password", type="password", key="login_password")
