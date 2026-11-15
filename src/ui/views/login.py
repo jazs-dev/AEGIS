@@ -18,6 +18,7 @@ def _submit_login() -> None:
 
 
 def render_login() -> None:
+    st.html("<style>.block-container { max-width: 540px; }</style>")
     with st.form("crew_login"):
         st.text_input("Username", key="login_username")
         st.text_input("Password", type="password", key="login_password")

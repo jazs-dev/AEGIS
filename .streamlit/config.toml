@@ -8,3 +8,7 @@ backgroundColor = "#16191d"
 secondaryBackgroundColor = "#22262b"
 textColor = "#e2e5e9"
 font = "sans serif"
+
+[server]
+runOnSave = true
+fileWatcherType = "auto"

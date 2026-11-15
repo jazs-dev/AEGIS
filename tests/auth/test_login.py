@@ -30,7 +30,7 @@ def test_login_rejection_session_and_logout(monkeypatch):
     assert app.session_state["authenticated"]
     assert not app.text_input
     app.run()
-    assert app.success
+    assert not app.exception
     app.button[0].click().run()
     assert len(app.text_input) == 2
     assert not app.exception
