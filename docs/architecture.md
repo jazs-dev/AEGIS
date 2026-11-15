@@ -16,19 +16,18 @@ El sistema no es un dispositivo médico validado. Las categorías `vf_compatible
 - Dashboard visual con lecturas vacías y ECG sintético de demostración.
 - Seis archivos JSON de configuración coherentes y validados por pruebas declarativas.
 - Pruebas de autenticación y de integridad de configuración.
+- Motor determinista de reglas, máquina de estados finitos y coordinador de monitoreo sin dependencia de Streamlit.
 
 ### Diseñado, pero no implementado
 
 - Adquisición real o carga de datasets fisiológicos.
-- Validación y normalización de señales en `src/processing/`.
+- Adquisición y normalización de señales ECG en `src/processing/`.
 - Procesamiento ECG y extracción de características en `src/processing/` o `src/algorithms/`.
-- Interpretación Python de los seis JSON.
-- Motor determinista de reglas.
-- Máquina de estados y persistencia temporal.
-- Alertas y monitoreo en `src/monitoring/`.
+- Procesamiento ECG y detección matemática de FV.
+- Integración de los resultados con Streamlit.
 - Conexión del dashboard con resultados calculados.
 
-Las carpetas `src/processing/`, `src/algorithms/` y `src/monitoring/` contienen actualmente solo sus archivos de paquete. Los nombres de módulos propuestos en este documento no representan archivos existentes.
+`src/algorithms/` todavía contiene solo su archivo de paquete. El procesamiento fisiológico está en `src/processing/` y el motor determinista está en `src/monitoring/`. El procesamiento ECG y la detección matemática de FV siguen fuera del alcance implementado.
 
 ## 2. Decisión técnica: arquitectura híbrida determinista
 
@@ -75,7 +74,7 @@ flowchart LR
 | Monitoreo | Estado, evidencia e historial | Registrar, priorizar y exponer alertas experimentales | Evento de monitoreo explicable |
 | Dashboard | Resultado de monitoreo | Presentar valores, calidad, señal, estado y advertencias | Interfaz visual |
 
-Las etapas de adquisición, validación, procesamiento, clasificación, motor, estados y monitoreo son diseño futuro. La única parte actualmente implementada es la presentación de una señal ECG sintética y valores placeholder en el dashboard.
+La adquisición real y el procesamiento ECG son diseño futuro. La validación/clasificación fisiológica, el motor de reglas, la máquina de estados y el coordinador de monitoreo ya están implementados de forma independiente de Streamlit. El dashboard todavía presenta una señal ECG sintética y valores placeholder.
 
 ## 4. Configuración JSON
 
@@ -91,10 +90,10 @@ flowchart TD
     EC --> VT
     VS --> VR
     VR --> VT
-    VT --> MON[Monitor Python futuro]
+    VT --> MON[Monitor Python implementado]
 ```
 
-La relación anterior describe dependencias conceptuales. Actualmente ningún módulo Python carga estos archivos.
+La relación anterior describe dependencias conceptuales. `config_loader.py` carga los seis archivos; el monitor interpreta las reglas y transiciones, mientras el procesamiento fisiológico interpreta las reglas numéricas.
 
 ### 4.1. `variable_definitions.json`
 
@@ -128,7 +127,7 @@ Ejemplo real:
 
 Este archivo es el contrato de categorías. Un valor compuesto como `adequate_or_altered` no pertenece al vocabulario actual y no debe ser generado por un módulo.
 
-**Módulo futuro propuesto:** `src/processing/config_loader.py` para cargar y validar el esquema; `src/processing/categories.py` podría exponer validaciones puras. Ninguno existe todavía.
+`src/processing/config_loader.py` carga y valida el esquema completo. La validación numérica y la clasificación fisiológica se implementan en `src/processing/measurement_validator.py` y `src/processing/variable_classifier.py`.
 
 ### 4.2. `classification_rules.json`
 
@@ -147,9 +146,9 @@ Ejemplo real:
 }
 ```
 
-Las categorías de este archivo deben existir en `variable_definitions.json`. Las expresiones son datos declarativos; todavía no existe un evaluador Python para interpretarlas. La configuración no define diagnóstico ni límites clínicos adicionales.
+Las categorías de este archivo deben existir en `variable_definitions.json`. Las expresiones son datos declarativos y son interpretadas por el parser restringido de `variable_classifier.py`. La configuración no define diagnóstico ni límites clínicos adicionales.
 
-**Módulo futuro propuesto:** `src/algorithms/physiological_classifier.py`, con un evaluador explícito de expresiones y pruebas de límites. No está implementado.
+La clasificación numérica se implementa actualmente en `src/processing/variable_classifier.py`, con un parser restringido que no ejecuta Python.
 
 ### 4.3. `ecg_classification.json`
 
@@ -175,7 +174,7 @@ Define cinco estados y un perfil de diez categorías por estado:
 
 Los perfiles son descripciones declarativas de evidencia esperada. No deben interpretarse como mediciones faltantes ni como inferencias automáticas. Por ejemplo, `VF_CARDIAC_ARREST` incluye `pulse_status: absent`, `responsiveness_status: unresponsive` y `breathing_status: absent`, además de evidencia ECG compatible.
 
-**Módulo futuro propuesto:** `src/monitoring/state_profiles.py` para cargar perfiles y producir explicaciones. No está implementado.
+Los perfiles son cargados por el `Configuration` compartido; todavía no existe un módulo independiente de perfiles porque no es necesario para la primera decisión determinista.
 
 ### 4.5. `vf_rules.json`
 
@@ -191,7 +190,7 @@ Contiene cinco reglas con prioridad 1 a 5 y estrategia `first_matching_rule_by_p
 
 Las claves `required` son obligatorias; las claves `supporting` son complementarias y no son necesarias para que coincida la regla. La regla de sospecha no requiere presión arterial ni SpO₂, de modo que no retrasa la alerta por datos complementarios. La ausencia de presión arterial y una SpO₂ no fiable no equivalen a ausencia de circulación.
 
-**Módulo futuro propuesto:** `src/monitoring/rule_engine.py`. Debe devolver la regla coincidente, condiciones satisfechas, condiciones ausentes y advertencias, sin afirmar un diagnóstico.
+`src/monitoring/rule_engine.py` devuelve regla, prioridad, variables coincidentes, bloqueos, evidencia faltante, competidores y una traza de condiciones, sin afirmar un diagnóstico.
 
 ### 4.6. `vf_transitions.json`
 
@@ -204,9 +203,9 @@ Define la máquina de estados declarativa:
 - diez transiciones `T01` a `T10`;
 - control externo `authorized_clinical_operator` para salir de `VF_CARDIAC_ARREST`.
 
-Las salidas de `VF_CARDIAC_ARREST` también requieren `post_event_circulation_assessment: completed`. La normalización del ECG no es suficiente. El archivo no implementa persistencia ni temporizadores; solo declara el intervalo periódico y el tipo de evaluación. La semántica temporal debe ser implementada y probada en Python.
+Las salidas de `VF_CARDIAC_ARREST` también requieren `post_event_circulation_assessment: completed`. La normalización del ECG no es suficiente. El archivo no implementa persistencia ni temporizadores; solo declara el intervalo periódico y el tipo de evaluación. `src/monitoring/monitor.py` aplica el intervalo con timestamps externos y `state_machine.py` conserva el historial de transiciones.
 
-**Módulo futuro propuesto:** `src/monitoring/state_machine.py`, que aplicará transiciones, conservará historial y rechazará salidas no autorizadas. No está implementado.
+`src/monitoring/state_machine.py` aplica las transiciones declaradas, conserva historial y rechaza salidas no autorizadas.
 
 ## 5. Procesamiento fisiológico
 
@@ -304,11 +303,11 @@ stateDiagram-v2
 - `ABNORMAL_RHYTHM` representa un ritmo válido `abnormal_non_vf`.
 - `NORMAL_MONITORING` requiere el conjunto normal completo de variables declarado en `vf_rules.json`.
 
-El motor futuro debe evaluar primero las reglas por prioridad y conservar la regla coincidente como evidencia. Si no coincide ninguna regla, `vf_rules.json` indica conservar el estado anterior y marcar el resultado como no clasificado.
+El motor implementado evalúa primero las reglas por prioridad y conserva la regla coincidente como evidencia. Si no coincide ninguna regla, devuelve `no_match`; si faltan condiciones obligatorias, devuelve `indeterminate`. El monitor conserva el estado efectivo cuando no existe candidato o transición válida.
 
 ### 7.2. Persistencia e historial
 
-La configuración actual declara un intervalo periódico de cinco segundos y evaluaciones inmediatas, pero no define debounce, número de ventanas consecutivas, duración mínima de estado ni política de pérdida de muestras. Esas decisiones deben definirse antes de implementar `state_machine.py`.
+La configuración actual declara un intervalo periódico de cinco segundos y evaluaciones inmediatas. El monitor acepta timestamps externos, no usa `sleep()` y omite una evaluación periódica si el intervalo no ha transcurrido. La configuración no define debounce, ventanas consecutivas, duración mínima de estado ni política de pérdida de muestras.
 
 El contrato futuro debería conservar, como mínimo:
 
@@ -336,17 +335,17 @@ flowchart LR
         VR[vf_rules.json]
         VT[vf_transitions.json]
     end
-    CL[config_loader.py propuesto] --> VD
+    CL[config_loader.py implementado] --> VD
     CL --> CR
     CL --> EC
     CL --> VS
     CL --> VR
     CL --> VT
-    PC[physiological_classifier.py propuesto] --> CR
-    QP[ecg_pipeline.py propuesto] --> EC
-    RE[rule_engine.py propuesto] --> VR
-    SP[state_profiles.py propuesto] --> VS
-    SM[state_machine.py propuesto] --> VT
+    PC[variable_classifier.py implementado] --> CR
+    QP[ecg_pipeline.py futuro] --> EC
+    RE[rule_engine.py implementado] --> VR
+    SP[Configuration implementado] --> VS
+    SM[state_machine.py implementado] --> VT
     CL --> PC
     CL --> QP
     CL --> RE
@@ -356,27 +355,27 @@ flowchart LR
     SP --> SM
 ```
 
-Todos los módulos con sufijo “propuesto” son diseño futuro. El código actual solo tiene `src/auth/` y `src/ui/` funcionales.
+Los módulos marcados como futuros corresponden al procesamiento ECG. El código actual también tiene funcionales `src/processing/` y `src/monitoring/`, siempre sin integración con Streamlit.
 
 ## 9. Separación de responsabilidades
 
 ### `src/processing/`
 
-Responsabilidad prevista: validar entradas, normalizar unidades, segmentar señales, filtrar y calcular indicadores de calidad. No debe decidir estados médicos ni renderizar Streamlit.
+Responsabilidad implementada parcialmente: cargar configuración y validar/clasificar mediciones fisiológicas. Quedan pendientes normalización de señales ECG, segmentación, filtrado y cálculo de calidad. No debe decidir estados médicos ni renderizar Streamlit.
 
-Módulos propuestos: `config_loader.py`, `signal_validation.py`, `ecg_pipeline.py`, `physiological_measurements.py`. No implementados.
+Módulos implementados: `config_loader.py`, `measurement_validator.py`, `variable_classifier.py`. Módulos futuros: `signal_validation.py`, `ecg_pipeline.py`.
 
 ### `src/algorithms/`
 
-Responsabilidad prevista: extracción de características y clasificación matemática. Debe producir características y categorías declaradas, no modificar la sesión de Streamlit.
+Responsabilidad futura: extracción de características y clasificación matemática ECG. Debe producir características y categorías declaradas, no modificar la sesión de Streamlit. La clasificación fisiológica numérica inicial está en `src/processing/variable_classifier.py`.
 
 Módulos propuestos: `physiological_classifier.py`, `qrs_detector.py`, `ecg_classifier.py`. No implementados.
 
 ### `src/monitoring/`
 
-Responsabilidad prevista: evaluar `vf_rules.json`, aplicar `vf_transitions.json`, conservar historial, priorizar alertas y exponer evidencia explicable.
+Responsabilidad implementada: evaluar `vf_rules.json`, aplicar `vf_transitions.json`, conservar historial y exponer evidencia explicable. La priorización de alertas clínicas todavía no está implementada.
 
-Módulos propuestos: `rule_engine.py`, `state_machine.py`, `monitoring_record.py`. No implementados.
+Módulos implementados: `rule_engine.py`, `state_machine.py`, `monitor.py`. No implementa todavía procesamiento ECG ni alarmas clínicas.
 
 ### `src/ui/`
 
@@ -429,7 +428,7 @@ El flujo de UI futuro debería recibir un registro de monitoreo ya calculado y m
 - evidencia faltante y advertencias;
 - indicación explícita de simulación y limitaciones.
 
-La interfaz no debe calcular QRS, interpretar `vf_score`, elegir prioridades ni autorizar la salida de un estado de emergencia. Estas tareas pertenecen a las capas de procesamiento, algoritmos y monitoreo.
+La interfaz actual no calcula QRS, interpreta `vf_score`, elige prioridades ni autoriza la salida de un estado de emergencia. Estas tareas pertenecen a las capas de procesamiento, algoritmos y monitoreo.
 
 ## 12. Decisiones pendientes antes de implementar
 
@@ -458,7 +457,7 @@ Pruebas:
 python -m pytest -q
 ```
 
-La aplicación actual muestra login, identidad y dashboard visual. Los módulos de procesamiento, algoritmos y monitoreo descritos como futuros todavía no se ejecutan.
+La aplicación actual muestra login, identidad y dashboard visual. Los módulos de procesamiento y monitoreo pueden ejecutarse de forma independiente, pero todavía no están conectados al dashboard.
 
 ## 14. Alcance y seguridad
 
