@@ -149,6 +149,29 @@ Comprobar el comportamiento de los algoritmos mediante pruebas reproducibles, da
 - [Fundamentación científica](docs/scientific_foundation.md)
 - [Catálogo de condiciones médicas](docs/medical_conditions_catalog.md)
 
+## 8.1. Demostración integrada
+
+Inicia la aplicación desde la raíz del repositorio:
+
+```bash
+python -m streamlit run app.py
+```
+
+Después de autenticarte, selecciona un escenario y una modalidad:
+
+- **Simulación categórica:** usa las categorías ECG sintéticas del simulador para demostrar reglas y transiciones; no ejecuta detección matemática ECG.
+- **Análisis ECG experimental:** genera muestras ECG sintéticas, procesa esas mismas muestras con `ecg_processing.py`, `qrs_detection.py` y `vf_detection.py`, y entrega sus categorías al monitor.
+
+`Iniciar simulación` procesa la primera muestra. `Avanzar muestra` procesa una muestra adicional y `Ejecutar restante` completa la secuencia. El historial y el estado se conservan en la sesión de Streamlit. El escenario es una referencia de demostración; el estado mostrado procede del pipeline, las reglas y la máquina de estados.
+
+Para ejecutar las pruebas:
+
+```bash
+pytest
+```
+
+La aplicación es `simulation_only`: no constituye un dispositivo médico validado, no diagnostica FV ni paro cardiaco y no proporciona recomendaciones de tratamiento.
+
 ## 9. Alcance
 
 El sistema es un prototipo experimental desarrollado durante NASA Space Apps Challenge 2026.

@@ -254,7 +254,17 @@ Los cortes `0.5–30 Hz` para análisis, `5–15 Hz` para QRS, ventana de 4 s, l
 
 No se implementó aún un cargador WFDB ni se reportaron métricas sobre registros reales. Las fuentes candidatas son CUDB y MIT-BIH Malignant Ventricular Ectopy. La transición `NORMAL_MONITORING → ABNORMAL_RHYTHM` continúa rechazada por configuración y no fue alterada automáticamente.
 
-## 11. Criterio de continuación
+## 11. Integración Streamlit implementada
+
+Se añadió `src/integration/monitoring_pipeline.py` y se actualizó `src/ui/views/dashboard.py`. El pipeline conserva la separación entre presentación y lógica: la vista controla escenario, modalidad, semilla, duración e intervalo; el pipeline reutiliza el simulador, clasificadores, procesamiento ECG, motor de reglas y máquina de estados.
+
+La modalidad categórica conserva las categorías ECG simuladas y está rotulada como demostración sin detección matemática. La modalidad matemática genera una forma sintética separada, procesa las mismas muestras que se grafican y obtiene `ecg_quality`, `qrs_status` y `rhythm_classification` del detector. La etiqueta del escenario y `expected_state_oracle` no deciden el resultado.
+
+El dashboard muestra indicadores fisiológicos con clasificación, ECG y QRS cuando existen muestras, características calculadas, estado candidato, estado efectivo, reglas, transiciones rechazadas, evidencia faltante e historial temporal. La autenticación permanece sin cambios.
+
+Las pruebas de integración y UI verifican las dos modalidades, la independencia de la capa de integración respecto de Streamlit, la persistencia de sesión, el historial, la retención de paro y el manejo de señal inválida. El sistema sigue siendo `simulation_only` y no constituye validación clínica.
+
+## 12. Criterio de continuación
 
 El siguiente cambio debería integrar una ruta WFDB reproducible, separar desarrollo/evaluación por registro, calibrar los parámetros experimentales y revisar resultados con especialistas. No debe presentar `vf_compatible` como diagnóstico clínico.
 

@@ -525,3 +525,33 @@ El método principal es un clasificador espectral experimental basado en la fami
 Para una ventana de (N) muestras centradas (x[n]), se calculan RMS (=\sqrt{N^{-1}\sum x[n]^2}), energía (=\sum x[n]^2), espectro (X[k]=FFT(x[n]w[n])) con Hann, potencia relativa por banda, entropía espectral normalizada (-\sum p_k\log_2(p_k)/\log_2(K)) y estadísticas de intervalos entre cruces de la señal centrada (TCI). Son características matemáticas, no diagnósticos.
 
 Fuentes verificadas: [Pan-Tompkins en PubMed](https://pubmed.ncbi.nlm.nih.gov/3997178/), comparación de técnicas TCI/VF-filter en [PubMed](https://pubmed.ncbi.nlm.nih.gov/8331990/), [CU Ventricular Tachyarrhythmia Database](https://physionet.org/content/cudb/1.0.0/) y [MIT-BIH Malignant Ventricular Ectopy Database](https://physionet.org/content/vfdb/1.0.0/). No se reportan métricas clínicas sobre esas bases en esta etapa.
+
+## 17. Integración de dashboard
+
+`src/integration/monitoring_pipeline.py` es el coordinador independiente de Streamlit. Genera o recibe muestras, reutiliza `classify_measurements()`, procesa el ECG solamente en modalidad matemática, agrega la evidencia clínica independiente y llama a `Monitor.evaluate()`. No contiene reglas duplicadas ni usa `expected_state_oracle` para decidir estados.
+
+```mermaid
+sequenceDiagram
+    participant U as Usuario
+    participant D as dashboard.py
+    participant P as monitoring_pipeline.py
+    participant S as Simulator
+    participant E as ECG algorithms
+    participant M as Monitor
+    U->>D: Selecciona escenario/modalidad
+    D->>P: Iniciar o avanzar muestra
+    P->>S: Generar mediciones reproducibles
+    P->>P: Validar y clasificar fisiología
+    alt Modalidad matemática
+        P->>E: Procesar las mismas muestras ECG
+        E-->>P: Calidad, QRS y ritmo calculados
+    else Modalidad categórica
+        S-->>P: Categorías ECG sintéticas
+    end
+    P->>M: Categorías + evidencia + timestamp
+    M-->>P: Regla, candidato, transición y estado efectivo
+    P-->>D: PipelineResult trazable
+    D-->>U: Indicadores, ECG, estado e historial
+```
+
+La vista conserva `MonitoringPipeline` en `st.session_state`; reiniciar borra únicamente la demostración y no se presenta como recuperación clínica. En modalidad matemática, la gráfica muestra exactamente `ECGSignal.samples` que recibieron los algoritmos. En modalidad categórica se informa explícitamente que no hay muestras ECG analizadas.
