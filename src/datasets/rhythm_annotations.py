@@ -43,7 +43,7 @@ def normalize_rhythm_label(raw_label: str, dataset: str) -> tuple[str, str]:
     negative for the binary VF endpoint.  ``AFIB`` is never mapped to VF.
     """
     del dataset  # The explicit mapping is currently shared by both databases.
-    label = str(raw_label or "").strip().upper().replace("(", "").replace(")", "")
+    label = str(raw_label or "").strip().strip("\x00").upper().replace("(", "").replace(")", "")
     label = label.split()[0] if label else ""
     if label in VF_LABELS:
         return "VF", label
@@ -61,22 +61,39 @@ def annotations_from_wfdb(annotation: object, dataset: str) -> tuple[RhythmAnnot
     for index, sample in enumerate(samples):
         aux = aux_notes[index] if index < len(aux_notes) else ""
         symbol = symbols[index] if index < len(symbols) else ""
-        raw = aux.strip() if isinstance(aux, str) and aux.strip() else str(symbol)
+        raw = aux.strip().strip("\x00") if isinstance(aux, str) and aux.strip() else ""
+        if not raw and dataset.lower() == "cudb":
+            # CUDB includes beat/event symbols; only rhythm-text annotations
+            # should define reference intervals.
+            continue
+        if not raw:
+            raw = str(symbol)
         label, rhythm = normalize_rhythm_label(raw, dataset)
         normalized.append(RhythmAnnotation(int(sample), label, rhythm, raw))
     return tuple(normalized)
 
 
-def build_rhythm_intervals(annotations: Sequence[RhythmAnnotation], record_length_samples: int) -> tuple[RhythmInterval, ...]:
-    """Expand rhythm-change annotations into half-open sample intervals."""
+def build_rhythm_intervals(
+    annotations: Sequence[RhythmAnnotation],
+    record_length_samples: int,
+    *,
+    initial_label: str = "AMBIGUOUS",
+    initial_rhythm: str = "UNKNOWN",
+) -> tuple[RhythmInterval, ...]:
+    """Expand rhythm-change annotations into half-open sample intervals.
+
+    CUDB documents its beat annotations as normal and its VF annotations as
+    approximate onset markers, so the segmenter may explicitly provide
+    ``initial_label='NON_VF'`` for the pre-onset interval.
+    """
     if record_length_samples <= 0:
         raise ValueError("record_length_samples must be positive")
     ordered = sorted((item for item in annotations if 0 <= item.sample_index < record_length_samples), key=lambda item: item.sample_index)
     if not ordered:
-        return (RhythmInterval(0, record_length_samples, "AMBIGUOUS", "UNKNOWN", "no rhythm annotation"),)
+        return (RhythmInterval(0, record_length_samples, initial_label, initial_rhythm, "no rhythm annotation"),)
     intervals: list[RhythmInterval] = []
     if ordered[0].sample_index > 0:
-        intervals.append(RhythmInterval(0, ordered[0].sample_index, "AMBIGUOUS", "UNKNOWN", "record begins before first rhythm annotation"))
+        intervals.append(RhythmInterval(0, ordered[0].sample_index, initial_label, initial_rhythm, "record begins before first rhythm annotation"))
     for current, following in zip(ordered, (*ordered[1:], None)):
         end = following.sample_index if following else record_length_samples
         intervals.append(RhythmInterval(current.sample_index, end, current.label, current.rhythm, "annotation interval"))

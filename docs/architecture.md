@@ -530,7 +530,7 @@ Fuentes verificadas: [Pan-Tompkins en PubMed](https://pubmed.ncbi.nlm.nih.gov/39
 
 La validación offline vive en `src/datasets/` y `src/evaluation/`, sin importar Streamlit. `physionet_loader.py` conserva el contrato ECG y las anotaciones WFDB; `rhythm_annotations.py` normaliza cambios de ritmo; `ecg_segmentation.py` aplica ventanas completas y etiqueta transiciones como ambiguas; `vf_evaluator.py` ejecuta el detector congelado y genera métricas, cobertura y agrupaciones; `reporting.py` genera figuras desde resultados guardados.
 
-La referencia no se entrega al detector. Solo se utiliza después para comparar la categoría calculada. Las abstenciones, exclusiones y ventanas ambiguas permanecen registradas y se distinguen de errores binarios. El protocolo completo está en [docs/vf_validation_protocol.md](vf_validation_protocol.md).
+La referencia no se entrega al detector. Solo se utiliza después para comparar la categoría calculada. Las abstenciones, exclusiones y ventanas ambiguas permanecen registradas y se distinguen de errores binarios. El protocolo completo está en [docs/vf_validation_protocol.md](vf_validation_protocol.md); los resultados del primer subconjunto real están en [docs/vf_baseline_results.md](vf_baseline_results.md).
 
 ## 17. Integración de dashboard
 

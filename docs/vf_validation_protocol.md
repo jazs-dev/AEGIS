@@ -71,7 +71,9 @@ El evaluador guarda `evaluation_report.json`, `segment_results.csv` y figuras PN
 
 ## Estado de esta ejecución
 
-No se obtuvieron registros reales en el entorno actual: la resolución DNS hacia `physionet.org` falló al intentar leer CUDB/VFDB. Por tanto, no se reportan número de ventanas reales, matriz de confusión real, sensibilidad, especificidad, falsos positivos, falsos negativos ni tiempos de detección. Las pruebas WFDB usan fixtures pequeños y no constituyen evidencia de rendimiento.
+La resolución DNS directa falló, pero el endpoint S3 público oficial de PhysioNet respondió. Se descargaron y verificaron por SHA-256 seis registros: VFDB `422`, `424`, `426`, `430` y CUDB `cu01`, `cu03`. La evaluación real combinada produjo 2,030 ventanas binarias, 90 abstenciones y reportes en `data/processed/vf_evaluation/combined_baseline_20261115_with_examples/`. El detalle numérico está en [vf_baseline_results.md](vf_baseline_results.md).
+
+La evaluación es un subconjunto preliminar; no representa la colección completa ni una validación clínica.
 
 ## Limitaciones
 

@@ -13,6 +13,7 @@ def test_reference_mapping_keeps_vt_flutter_and_afib_outside_vf() -> None:
     assert normalize_rhythm_label("VFL", "vfdb") == ("NON_VF", "VFL")
     assert normalize_rhythm_label("AFIB", "vfdb") == ("NON_VF", "AFIB")
     assert normalize_rhythm_label("NOISE", "vfdb")[0] == "EXCLUDED"
+    assert normalize_rhythm_label("(VFIB\x00", "vfdb")[0] == "VF"
 
 
 def test_annotation_intervals_and_transition_policy() -> None:
