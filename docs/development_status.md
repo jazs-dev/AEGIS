@@ -268,3 +268,13 @@ Las pruebas de integración y UI verifican las dos modalidades, la independencia
 
 El siguiente cambio debería integrar una ruta WFDB reproducible, separar desarrollo/evaluación por registro, calibrar los parámetros experimentales y revisar resultados con especialistas. No debe presentar `vf_compatible` como diagnóstico clínico.
 
+## 13. Evaluación baseline de FV
+
+Se añadieron `src/datasets/physionet_loader.py`, `src/datasets/rhythm_annotations.py`, `src/evaluation/ecg_segmentation.py`, `src/evaluation/vf_evaluator.py`, `src/evaluation/reporting.py`, `scripts/evaluate_vf.py` y `docs/vf_validation_protocol.md`. El baseline conserva la configuración ECG versión `0.1.0` sin modificar umbrales.
+
+El cargador soporta archivos WFDB locales y registros remotos de CUDB/VFDB cuando hay conectividad. La evaluación usa ventanas completas de 4 segundos, separa `VF`, `NON_VF`, `AMBIGUOUS` y `EXCLUDED`, calcula cobertura y conserva resultados por segmento, registro, dataset, ritmo y calidad.
+
+El informe también resume episodios temporales: inicio anotado, primera detección disponible al final de una ventana, retardo aproximado, episodios no detectados y falsas alarmas fuera de FV.
+
+En este entorno no se pudieron descargar registros reales porque falló la resolución DNS hacia `physionet.org`. No se han generado métricas reales ni se presentan resultados inventados. Las pruebas usan fixtures WFDB sintéticos pequeños para validar lectura, anotaciones, segmentación, métricas, reportes y conexión con el detector.
+

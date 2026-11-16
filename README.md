@@ -172,6 +172,17 @@ pytest
 
 La aplicación es `simulation_only`: no constituye un dispositivo médico validado, no diagnostica FV ni paro cardiaco y no proporciona recomendaciones de tratamiento.
 
+## 8.2. Evaluación offline del baseline ECG
+
+La evaluación sobre PhysioNet no se ejecuta desde Streamlit. Con registros WFDB locales o conectividad a PhysioNet:
+
+```bash
+python scripts/evaluate_vf.py vfdb 418 --output data/processed/vf_evaluation
+python scripts/evaluate_vf.py cudb cu01 --local-root data/raw/physionet --output data/processed/vf_evaluation
+```
+
+El evaluador conserva ventanas ambiguas y abstenciones, genera `evaluation_report.json`, `segment_results.csv` y figuras, y no modifica los parámetros del detector. El protocolo completo está en [docs/vf_validation_protocol.md](docs/vf_validation_protocol.md). Las métricas reales solo deben reportarse cuando los registros hayan sido descargados correctamente.
+
 ## 9. Alcance
 
 El sistema es un prototipo experimental desarrollado durante NASA Space Apps Challenge 2026.

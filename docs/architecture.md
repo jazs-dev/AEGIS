@@ -526,6 +526,12 @@ Para una ventana de (N) muestras centradas (x[n]), se calculan RMS (=\sqrt{N^{-1
 
 Fuentes verificadas: [Pan-Tompkins en PubMed](https://pubmed.ncbi.nlm.nih.gov/3997178/), comparación de técnicas TCI/VF-filter en [PubMed](https://pubmed.ncbi.nlm.nih.gov/8331990/), [CU Ventricular Tachyarrhythmia Database](https://physionet.org/content/cudb/1.0.0/) y [MIT-BIH Malignant Ventricular Ectopy Database](https://physionet.org/content/vfdb/1.0.0/). No se reportan métricas clínicas sobre esas bases en esta etapa.
 
+## 18. Evaluación experimental
+
+La validación offline vive en `src/datasets/` y `src/evaluation/`, sin importar Streamlit. `physionet_loader.py` conserva el contrato ECG y las anotaciones WFDB; `rhythm_annotations.py` normaliza cambios de ritmo; `ecg_segmentation.py` aplica ventanas completas y etiqueta transiciones como ambiguas; `vf_evaluator.py` ejecuta el detector congelado y genera métricas, cobertura y agrupaciones; `reporting.py` genera figuras desde resultados guardados.
+
+La referencia no se entrega al detector. Solo se utiliza después para comparar la categoría calculada. Las abstenciones, exclusiones y ventanas ambiguas permanecen registradas y se distinguen de errores binarios. El protocolo completo está en [docs/vf_validation_protocol.md](vf_validation_protocol.md).
+
 ## 17. Integración de dashboard
 
 `src/integration/monitoring_pipeline.py` es el coordinador independiente de Streamlit. Genera o recibe muestras, reutiliza `classify_measurements()`, procesa el ECG solamente en modalidad matemática, agrega la evidencia clínica independiente y llama a `Monitor.evaluate()`. No contiene reglas duplicadas ni usa `expected_state_oracle` para decidir estados.
