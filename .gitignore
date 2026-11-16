@@ -153,6 +153,8 @@ activemq-data/
 .env
 .envrc
 .venv
+data/raw/physionet/
+data/processed/vf_evaluation/
 env/
 venv/
 ENV/

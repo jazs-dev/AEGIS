@@ -1,8 +1,25 @@
 
 {
   "model": "ventricular_fibrillation_monitoring",
-  "version": "0.4.0",
+  "version": "0.2.0",
   "purpose": "simulation_only",
+  "state_field_order": [
+    "heart_rate_status",
+    "spo2_status",
+    "respiratory_rate_status",
+    "blood_pressure_status",
+    "ecg_quality",
+    "rhythm_classification",
+    "qrs_status",
+    "pulse_status",
+    "responsiveness_status",
+    "breathing_status"
+  ],
+  "notes": [
+    "Every value in a state profile is an atomic category or an explicit not_assessed category.",
+    "A state profile describes evidence expected for that state; it does not infer missing measurements.",
+    "VF_CARDIAC_ARREST requires independent clinical evidence in addition to ECG evidence."
+  ],
 
   "states": {
     "NORMAL_MONITORING": {
@@ -14,60 +31,60 @@
       "rhythm_classification": "normal_sinus",
       "qrs_status": "organized",
       "pulse_status": "present",
-      "responsiveness": "responsive",
+      "responsiveness_status": "responsive",
       "breathing_status": "normal"
     },
 
     "ABNORMAL_RHYTHM": {
-      "heart_rate_status": "tachycardia_or_bradycardia_or_irregular",
-      "spo2_status": "adequate_or_altered",
-      "respiratory_rate_status": "normal_or_altered",
-      "blood_pressure_status": "stable_or_altered",
+      "heart_rate_status": "not_assessed",
+      "spo2_status": "not_assessed",
+      "respiratory_rate_status": "not_assessed",
+      "blood_pressure_status": "not_assessed",
       "ecg_quality": "valid",
       "rhythm_classification": "abnormal_non_vf",
-      "qrs_status": "organized_or_abnormal",
-      "pulse_status": "present_or_altered",
-      "responsiveness": "responsive_or_altered",
-      "breathing_status": "normal_or_altered"
+      "qrs_status": "abnormal",
+      "pulse_status": "present",
+      "responsiveness_status": "responsive",
+      "breathing_status": "normal"
     },
 
     "SUSPECTED_VF": {
       "heart_rate_status": "not_reliably_calculable",
       "spo2_status": "potentially_unreliable",
-      "respiratory_rate_status": "abnormal_or_not_assessed",
-      "blood_pressure_status": "low_or_unmeasurable",
+      "respiratory_rate_status": "not_assessed",
+      "blood_pressure_status": "not_assessed",
       "ecg_quality": "valid",
       "rhythm_classification": "vf_compatible",
       "qrs_status": "not_organized",
-      "pulse_status": "absent_or_not_assessed",
-      "responsiveness": "unresponsive_or_not_assessed",
-      "breathing_status": "absent_agonal_or_not_assessed"
+      "pulse_status": "not_assessed",
+      "responsiveness_status": "not_assessed",
+      "breathing_status": "not_assessed"
     },
 
     "VF_CARDIAC_ARREST": {
       "heart_rate_status": "not_reliably_calculable",
       "spo2_status": "unreliable_without_perfusion",
-      "respiratory_rate_status": "absent_or_agonal",
-      "blood_pressure_status": "no_effective_pressure",
+      "respiratory_rate_status": "not_assessed",
+      "blood_pressure_status": "unmeasurable",
       "ecg_quality": "valid",
       "rhythm_classification": "vf_compatible",
       "qrs_status": "not_organized",
       "pulse_status": "absent",
-      "responsiveness": "unresponsive",
-      "breathing_status": "absent_or_agonal"
+      "responsiveness_status": "unresponsive",
+      "breathing_status": "absent"
     },
 
     "SIGNAL_INVALID": {
-      "heart_rate_status": "unreliable_if_ecg_derived",
-      "spo2_status": "independently_assessed",
-      "respiratory_rate_status": "independently_assessed",
-      "blood_pressure_status": "independently_assessed",
+      "heart_rate_status": "unreliable",
+      "spo2_status": "not_assessed",
+      "respiratory_rate_status": "not_assessed",
+      "blood_pressure_status": "not_assessed",
       "ecg_quality": "invalid",
       "rhythm_classification": "uninterpretable",
       "qrs_status": "uninterpretable",
-      "pulse_status": "independently_assessed",
-      "responsiveness": "independently_assessed",
-      "breathing_status": "independently_assessed"
+      "pulse_status": "not_assessed",
+      "responsiveness_status": "not_assessed",
+      "breathing_status": "not_assessed"
     }
   }
 }

@@ -1,0 +1,90 @@
+
+{
+  "version": "0.2.0",
+  "purpose": "simulation_only",
+  "notes": [
+    "Ranges are half-open or closed exactly as stated in each expression.",
+    "Values below zero are invalid for the numeric variables; no upper clinical limit is invented here.",
+    "The rules classify measurements and do not diagnose a medical condition."
+  ],
+  "classification_rules": {
+    "heart_rate_status": {
+      "unit": "bpm",
+      "context": "adult_at_rest",
+      "rules": {
+        "bradycardia": {
+          "value": "<60"
+        },
+        "normal_for_context": {
+          "value": ">=60 AND <=100"
+        },
+        "tachycardia": {
+          "value": ">100"
+        },
+        "invalid": {
+          "value": "<0"
+        }
+      }
+    },
+
+    "spo2_status": {
+      "unit": "%",
+      "context": "adult_reference",
+      "rules": {
+        "adequate": {
+          "value": ">=95 AND <=100"
+        },
+        "altered": {
+          "value": ">=0 AND <95"
+        },
+        "invalid": {
+          "value": "<0 OR >100"
+        }
+      }
+    },
+
+    "respiratory_rate_status": {
+      "unit": "breaths_per_minute",
+      "context": "adult_at_rest",
+      "rules": {
+        "bradypnea": {
+          "value": ">=0 AND <12"
+        },
+        "normal_for_context": {
+          "value": ">=12 AND <=20"
+        },
+        "tachypnea": {
+          "value": ">20"
+        },
+        "invalid": {
+          "value": "<0"
+        }
+      }
+    },
+
+    "blood_pressure_status": {
+      "unit": "mmHg",
+      "context": "adult_at_rest",
+      "rules": {
+        "low": {
+          "systolic": "<90",
+          "operator": "OR",
+          "diastolic": "<60"
+        },
+        "stable": {
+          "systolic": ">=90 AND <120",
+          "operator": "AND",
+          "diastolic": ">=60 AND <80"
+        },
+        "elevated": {
+          "systolic": ">=120 AND <130",
+          "operator": "AND",
+          "diastolic": ">=60 AND <80"
+        },
+        "altered": {
+          "description": "Otros valores fuera de las categorias anteriores"
+        }
+      }
+    }
+  }
+}

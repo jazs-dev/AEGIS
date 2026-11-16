@@ -1,0 +1,157 @@
+
+{
+  "model": "ventricular_fibrillation_monitoring",
+  "version": "0.2.0",
+  "purpose": "simulation_only",
+  "notes": [
+    "Categorical values are atomic; alternatives are represented as arrays in rules.",
+    "responsiveness_status and breathing_status are explicit clinical evidence inputs, not inferred sensor values.",
+    "No variable in this file is, by itself, a diagnosis."
+  ],
+
+  "variables": {
+    "heart_rate_status": {
+      "description": "Clasificacion de la frecuencia cardiaca",
+      "unit": "bpm",
+      "source": "heart_rate_sensor_or_ecg",
+      "type": "categorical",
+      "allowed_values": {
+        "normal_for_context": "Frecuencia cardiaca adecuada para el contexto",
+        "tachycardia": "Frecuencia cardiaca elevada",
+        "bradycardia": "Frecuencia cardiaca disminuida",
+        "irregular": "Intervalos entre latidos irregulares",
+        "not_reliably_calculable": "No es posible calcular una frecuencia fiable",
+        "unreliable": "Medicion de frecuencia no fiable",
+        "invalid": "Medicion fuera del dominio valido o no numerica",
+        "not_assessed": "Frecuencia no evaluada"
+      }
+    },
+
+    "spo2_status": {
+      "description": "Clasificacion de la saturacion periferica de oxigeno",
+      "unit": "%",
+      "source": "pulse_oximeter",
+      "type": "categorical",
+      "allowed_values": {
+        "adequate": "Saturacion adecuada para el contexto",
+        "altered": "Saturacion fuera del criterio establecido",
+        "potentially_unreliable": "Lectura de fiabilidad incierta",
+        "unreliable_without_perfusion": "Lectura no fiable por falta de perfusion pulsátil",
+        "invalid": "Medicion invalida",
+        "not_assessed": "Saturacion no evaluada"
+      }
+    },
+
+    "respiratory_rate_status": {
+      "description": "Clasificacion de la frecuencia respiratoria",
+      "unit": "breaths_per_minute",
+      "source": "respiratory_sensor",
+      "type": "categorical",
+      "allowed_values": {
+        "normal_for_context": "Frecuencia respiratoria adecuada",
+        "tachypnea": "Frecuencia respiratoria elevada",
+        "bradypnea": "Frecuencia respiratoria disminuida",
+        "apnea_detected": "Ausencia de respiraciones detectadas",
+        "abnormal": "Frecuencia respiratoria anormal no especificada",
+        "invalid": "Medicion no fiable",
+        "not_assessed": "Frecuencia respiratoria no evaluada"
+      }
+    },
+
+    "blood_pressure_status": {
+      "description": "Clasificacion de la presion arterial",
+      "unit": "mmHg",
+      "source": "blood_pressure_monitor",
+      "type": "categorical",
+      "allowed_values": {
+        "stable": "Presion arterial estable para el contexto",
+        "elevated": "Presion arterial elevada",
+        "low": "Presion arterial disminuida",
+        "altered": "Alteracion de presion no especificada",
+        "unmeasurable": "El instrumento no obtiene una lectura fiable",
+        "invalid": "Medicion invalida",
+        "not_assessed": "Presion arterial no evaluada"
+      }
+    },
+
+    "ecg_quality": {
+      "description": "Calidad de la señal electrocardiografica",
+      "unit": "none",
+      "source": "ecg_signal_processing",
+      "type": "categorical",
+      "allowed_values": {
+        "valid": "ECG interpretable para el analisis previsto",
+        "invalid": "ECG no interpretable",
+        "not_assessed": "Calidad todavia no evaluada"
+      }
+    },
+
+    "rhythm_classification": {
+      "description": "Clasificacion del ritmo electrocardiografico",
+      "unit": "none",
+      "source": "ecg_detection_algorithm",
+      "type": "categorical",
+      "allowed_values": {
+        "normal_sinus": "Ritmo sinusal normal",
+        "abnormal_non_vf": "Ritmo anormal no clasificado como FV",
+        "vf_compatible": "Patron compatible con fibrilacion ventricular",
+        "uninterpretable": "Ritmo no interpretable",
+        "not_assessed": "Ritmo no evaluado"
+      }
+    },
+
+    "qrs_status": {
+      "description": "Organizacion de los complejos QRS",
+      "unit": "none",
+      "source": "ecg_signal_processing",
+      "type": "categorical",
+      "allowed_values": {
+        "organized": "Complejos QRS organizados",
+        "abnormal": "Complejos QRS con alteraciones",
+        "not_organized": "No se identifican complejos QRS organizados",
+        "uninterpretable": "Complejos QRS no evaluables",
+        "not_assessed": "QRS no evaluados"
+      }
+    },
+
+    "pulse_status": {
+      "description": "Estado de presencia de pulso arterial",
+      "unit": "none",
+      "source": "clinical_assessment_or_validated_pulse_sensor",
+      "type": "categorical",
+      "allowed_values": {
+        "present": "Pulso arterial detectado",
+        "altered": "Pulso detectable con caracteristicas anormales",
+        "absent": "Ausencia de pulso en una evaluacion clinica",
+        "unreliable": "Evaluacion de pulso no fiable",
+        "not_assessed": "Pulso no evaluado"
+      }
+    },
+
+    "responsiveness_status": {
+      "description": "Respuesta clinica observada durante la evaluacion",
+      "unit": "none",
+      "source": "clinical_assessment",
+      "type": "categorical",
+      "allowed_values": {
+        "responsive": "Respuesta presente",
+        "unresponsive": "Sin respuesta a la evaluacion",
+        "not_assessed": "Respuesta no evaluada"
+      }
+    },
+
+    "breathing_status": {
+      "description": "Estado clinico de la respiracion",
+      "unit": "none",
+      "source": "clinical_assessment_or_validated_respiratory_sensor",
+      "type": "categorical",
+      "allowed_values": {
+        "normal": "Respiracion normal observada",
+        "absent": "Ausencia de respiracion observada",
+        "agonal": "Respiracion agonica observada",
+        "abnormal": "Respiracion anormal no especificada",
+        "not_assessed": "Respiracion no evaluada"
+      }
+    }
+  }
+}

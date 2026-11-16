@@ -1,0 +1,58 @@
+{
+  "version": "0.1.0",
+  "purpose": "simulation_only",
+  "validation_status": "experimental_not_clinically_validated",
+  "method": "spectral_vf_filter_with_temporal_organization_and_pan_tompkins_variant",
+  "sampling": {
+    "minimum_sampling_rate_hz": 50.0,
+    "preferred_sampling_rate_hz": 250.0,
+    "window_seconds": 4.0,
+    "step_seconds": 1.0
+  },
+  "preprocessing": {
+    "analysis_bandpass_hz": [0.5, 30.0],
+    "analysis_filter_order": 4,
+    "qrs_bandpass_hz": [5.0, 15.0],
+    "qrs_filter_order": 2
+  },
+  "quality": {
+    "max_missing_samples_ratio": 0.05,
+    "max_clipping_ratio": 0.05,
+    "max_high_frequency_noise_ratio": 0.35,
+    "minimum_signal_std": 0.005
+  },
+  "qrs": {
+    "integration_window_seconds": 0.15,
+    "minimum_peak_distance_seconds": 0.20,
+    "threshold_scale": 0.50,
+    "minimum_organized_beats": 3,
+    "organized_rr_cv_max": 0.20,
+    "not_organized_rr_cv_min": 0.35,
+    "not_organized_score_max": 0.35,
+    "minimum_activity_rms": 0.005
+  },
+  "vf": {
+    "analysis_band_hz": [3.0, 12.0],
+    "minimum_activity_rms": 0.005,
+    "minimum_band_power_ratio": 0.45,
+    "minimum_spectral_entropy": 0.65,
+    "normal_sinus_max_spectral_entropy": 0.65,
+    "vf_score_threshold": 0.65,
+    "weights": {
+      "band_power_ratio": 0.5,
+      "spectral_entropy": 0.3,
+      "temporal_crossing_irregularity": 0.2
+    }
+  },
+  "parameter_provenance": {
+    "published": [],
+    "engineering_choices": [
+      "filter bands, quality limits, window length and decision thresholds are development values for synthetic experiments",
+      "they must not be interpreted as diagnostic thresholds"
+    ]
+  },
+  "references": [
+    "Pan J, Tompkins WJ. IEEE Transactions on Biomedical Engineering. 1985;32(3):230-236. DOI:10.1109/TBME.1985.325532",
+    "Clayton RH, Murray A, Campbell RW. Medical & Biological Engineering & Computing. 1993;31(2):111-117. DOI:10.1007/BF02446668"
+  ]
+}

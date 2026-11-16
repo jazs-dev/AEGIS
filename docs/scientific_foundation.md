@@ -246,3 +246,17 @@ Las decisiones tecnológicas y de arquitectura estarán documentadas en:
 - [ ] Investigación de datasets.
 - [ ] Selección y fundamentación de algoritmos.
 - [ ] Validación experimental del prototipo.
+
+## 13. Procesamiento ECG experimental
+
+La implementación inicial selecciona un enfoque determinista e interpretable de análisis espectral inspirado en la familia `VF-filter`/TCI, acompañado de un detector QRS inspirado en Pan-Tompkins. La comparación de Clayton, Murray y Campbell estudió explícitamente TCI, contenido fuera de la frecuencia media, autocorrelación y forma espectral en ventanas de 4 segundos; sus cifras sirven como contexto bibliográfico, no como desempeño de este repositorio.
+
+El procesamiento usa una ruta amplia para no reducir el análisis de FV al filtro QRS y una ruta independiente para candidatos QRS. Las características son RMS, energía, potencia relativa en banda, entropía espectral, frecuencia dominante y estadísticas de cruces de umbral. Los parámetros están en `config/ecg_algorithm_parameters.json` y se identifican como decisiones experimentales, no umbrales clínicos.
+
+El detector QRS no interpreta cero candidatos como FV. Devuelve `uninterpretable` cuando la evidencia de organización no es suficiente y usa `not_organized` solo cuando además existe actividad interpretable o irregularidad cuantificable. La detección de ritmo permanece separada de pulso, respuesta y respiración clínica.
+
+## 14. Datasets y evaluación
+
+Como fuentes posteriores se identificaron la [CUDB](https://physionet.org/content/cudb/1.0.0/) y la [MIT-BIH Malignant Ventricular Ectopy Database](https://physionet.org/content/vfdb/1.0.0/). CUDB declara 35 registros de ocho minutos y 250 Hz; VFDB declara 22 registros de media hora y anotaciones de ritmo/calidad. Deben cargarse respetando sus licencias y separando desarrollo de evaluación por registro o paciente. La MIT-BIH Atrial Fibrillation Database no es un sustituto de una base etiquetada de FV.
+
+Todavía no se presentan sensibilidad, especificidad, precisión ni matriz de confusión. Las pruebas actuales son sintéticas y de integración de software, no una evaluación clínica.

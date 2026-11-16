@@ -1,0 +1,81 @@
+
+{
+  "version": "0.2.0",
+  "model": "ecg_feature_classification",
+  "purpose": "simulation_only",
+  "notes": [
+    "The categories describe signal quality, QRS organization, and rhythm separately.",
+    "No numeric threshold for ventricular fibrillation is defined in this configuration.",
+    "vf_compatible is an algorithm output requiring later validation; it is not a diagnosis."
+  ],
+
+  "classifications": {
+    "ecg_quality": {
+      "input_features": [
+        "missing_samples_ratio",
+        "clipping_ratio",
+        "noise_level"
+      ],
+      "outputs": {
+        "valid": {
+          "description": "La señal cumple los criterios de calidad definidos."
+        },
+        "invalid": {
+          "description": "La señal no cumple los criterios de calidad."
+        },
+        "not_assessed": {
+          "description": "La calidad todavía no ha sido evaluada."
+        }
+      }
+    },
+
+    "qrs_status": {
+      "input_features": [
+        "qrs_detection_confidence",
+        "qrs_organization_score"
+      ],
+      "outputs": {
+        "organized": {
+          "description": "Se identifican complejos QRS organizados."
+        },
+        "abnormal": {
+          "description": "Se identifican complejos QRS con alteraciones."
+        },
+        "not_organized": {
+          "description": "No se identifican complejos QRS organizados."
+        },
+        "uninterpretable": {
+          "description": "La señal no permite evaluar los QRS."
+        },
+        "not_assessed": {
+          "description": "El análisis QRS todavía no se ha ejecutado."
+        }
+      }
+    },
+
+    "rhythm_classification": {
+      "input_features": [
+        "vf_score",
+        "vf_features",
+        "qrs_organization_score"
+      ],
+      "outputs": {
+        "normal_sinus": {
+          "description": "Patrón compatible con ritmo sinusal normal."
+        },
+        "abnormal_non_vf": {
+          "description": "Ritmo anormal sin evidencia suficiente de FV."
+        },
+        "vf_compatible": {
+          "description": "Características electrocardiográficas compatibles con FV."
+        },
+        "uninterpretable": {
+          "description": "El ECG no permite clasificar el ritmo."
+        },
+        "not_assessed": {
+          "description": "La clasificación del ritmo todavía no se ha realizado."
+        }
+      }
+    }
+  }
+}

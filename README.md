@@ -145,8 +145,43 @@ Comprobar el comportamiento de los algoritmos mediante pruebas reproducibles, da
 ## 8. Documentación
 
 - [Arquitectura del software](docs/architecture.md)
+- [Estado de desarrollo](docs/development_status.md)
 - [Fundamentación científica](docs/scientific_foundation.md)
 - [Catálogo de condiciones médicas](docs/medical_conditions_catalog.md)
+
+## 8.1. Demostración integrada
+
+Inicia la aplicación desde la raíz del repositorio:
+
+```bash
+python -m streamlit run app.py
+```
+
+Después de autenticarte, selecciona un escenario y una modalidad:
+
+- **Simulación categórica:** usa las categorías ECG sintéticas del simulador para demostrar reglas y transiciones; no ejecuta detección matemática ECG.
+- **Análisis ECG experimental:** genera muestras ECG sintéticas, procesa esas mismas muestras con `ecg_processing.py`, `qrs_detection.py` y `vf_detection.py`, y entrega sus categorías al monitor.
+
+`Iniciar simulación` procesa la primera muestra. `Avanzar muestra` procesa una muestra adicional y `Ejecutar restante` completa la secuencia. El historial y el estado se conservan en la sesión de Streamlit. El escenario es una referencia de demostración; el estado mostrado procede del pipeline, las reglas y la máquina de estados.
+
+Para ejecutar las pruebas:
+
+```bash
+pytest
+```
+
+La aplicación es `simulation_only`: no constituye un dispositivo médico validado, no diagnostica FV ni paro cardiaco y no proporciona recomendaciones de tratamiento.
+
+## 8.2. Evaluación offline del baseline ECG
+
+La evaluación sobre PhysioNet no se ejecuta desde Streamlit. Con registros WFDB locales o conectividad a PhysioNet:
+
+```bash
+python scripts/evaluate_vf.py vfdb 418 --output data/processed/vf_evaluation
+python scripts/evaluate_vf.py cudb cu01 --local-root data/raw/physionet --output data/processed/vf_evaluation
+```
+
+El evaluador conserva ventanas ambiguas y abstenciones, genera `evaluation_report.json`, `segment_results.csv` y figuras, y no modifica los parámetros del detector. El protocolo completo está en [docs/vf_validation_protocol.md](docs/vf_validation_protocol.md). Las métricas reales solo deben reportarse cuando los registros hayan sido descargados correctamente.
 
 ## 9. Alcance
 
