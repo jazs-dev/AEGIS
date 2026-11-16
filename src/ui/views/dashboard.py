@@ -130,7 +130,7 @@ def _render_ecg(result: Any) -> None:
         positions = positions[positions < samples.size]
         markers[positions] = samples[positions]
         chart["QRS"] = markers
-    st.line_chart(chart, height=260, use_container_width=True)
+    st.line_chart(chart, height=260, width="stretch")
     st.caption(f"{ecg.record_id} · {ecg.sampling_rate_hz:g} Hz · ventana {samples.size / ecg.sampling_rate_hz:.2f} s · {ecg.source}")
     rhythm = analysis.rhythm.rhythm_classification if analysis.rhythm else "not_assessed"
     quality = analysis.rhythm.ecg_quality if analysis.rhythm else analysis.processed.ecg_quality
@@ -159,7 +159,7 @@ def _render_history(pipeline: MonitoringPipeline) -> None:
             "evaluación": monitor.evaluation_mode,
             "transición": transition.transition_id if transition and transition.allowed else "rechazada",
         })
-    st.dataframe(pd.DataFrame(rows), use_container_width=True, hide_index=True)
+    st.dataframe(pd.DataFrame(rows), width="stretch", hide_index=True)
 
 
 def render_dashboard() -> None:
