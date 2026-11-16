@@ -497,3 +497,31 @@ La aplicación actual muestra login, identidad y dashboard visual. Los módulos 
 ## 15. Alcance y seguridad
 
 Este proyecto es un prototipo experimental de simulación. No constituye un dispositivo médico validado, no confirma fibrilación ventricular ni paro cardiaco y no reemplaza protocolos clínicos, personal sanitario o sistemas certificados. Toda alerta futura deberá presentarse como resultado experimental con evidencia, limitaciones y fuente de datos.
+
+## 16. Pipeline ECG implementado en `features/ecg-vf-detection`
+
+La implementación mantiene dos rutas: una banda amplia experimental (`0.5–30 Hz`) para calidad, espectro y características FV, y una copia QRS (`5–15 Hz`) inspirada en Pan-Tompkins. El filtrado QRS no sustituye la señal original ni se usa como único criterio de FV.
+
+El contrato `ECGSignal` contiene `samples`, `sampling_rate_hz`, `amplitude_unit` (`mV` o `V`), `start_time`, `record_id`, `source` y metadatos. `process_ecg()` conserva `raw_samples`, devuelve la señal filtrada y calcula características. Los valores no finitos solo se interpolan en la copia de trabajo cuando la proporción experimental permitida lo permite.
+
+```mermaid
+flowchart LR
+    A[Muestras ECG + contrato] --> B[Validacion y calidad]
+    B -->|valida| C[Filtrado amplio 0.5-30 Hz]
+    B -->|invalida| Q[ecg_quality invalid]
+    C --> D[Caracteristicas espectrales y TCI]
+    C --> E[Filtrado QRS 5-15 Hz]
+    E --> F[Variante Pan-Tompkins]
+    F --> G[qrs_status + RR + organizacion]
+    D --> H[Clasificador VF determinista]
+    G --> H
+    H --> I[rhythm_classification]
+    Q --> I
+    I --> J[Monitor y motor de reglas]
+```
+
+El método principal es un clasificador espectral experimental basado en la familia de técnicas comparadas por Clayton, Murray y Campbell: relación de energía en banda, entropía espectral y variabilidad de cruces de umbral. Los umbrales de `config/ecg_algorithm_parameters.json` son decisiones de ingeniería para pruebas sintéticas, no umbrales diagnósticos. La ausencia de QRS no produce `vf_compatible` por sí sola.
+
+Para una ventana de (N) muestras centradas (x[n]), se calculan RMS (=\sqrt{N^{-1}\sum x[n]^2}), energía (=\sum x[n]^2), espectro (X[k]=FFT(x[n]w[n])) con Hann, potencia relativa por banda, entropía espectral normalizada (-\sum p_k\log_2(p_k)/\log_2(K)) y estadísticas de intervalos entre cruces de la señal centrada (TCI). Son características matemáticas, no diagnósticos.
+
+Fuentes verificadas: [Pan-Tompkins en PubMed](https://pubmed.ncbi.nlm.nih.gov/3997178/), comparación de técnicas TCI/VF-filter en [PubMed](https://pubmed.ncbi.nlm.nih.gov/8331990/), [CU Ventricular Tachyarrhythmia Database](https://physionet.org/content/cudb/1.0.0/) y [MIT-BIH Malignant Ventricular Ectopy Database](https://physionet.org/content/vfdb/1.0.0/). No se reportan métricas clínicas sobre esas bases en esta etapa.

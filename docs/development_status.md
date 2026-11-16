@@ -237,7 +237,24 @@ Las versiones están fijadas en `requirements.txt`. Entre las dependencias decla
 7. Añadir datasets de evaluación y métricas reproducibles.
 8. Revisar dependencias y resolver el comportamiento de recarga de Streamlit antes de usar la aplicación como demostración estable.
 
-## 10. Criterio de continuación
+## 10. Procesamiento ECG experimental implementado
 
-El siguiente cambio de implementación debería definir y validar matemáticamente la calidad ECG, QRS y ritmo. No debería modificar todavía la interfaz ni implementar detección de FV hasta que existan criterios reproducibles y datasets de evaluación.
+En `features/ecg-vf-detection` se añadieron `src/processing/ecg_processing.py`, `src/algorithms/qrs_detection.py`, `src/algorithms/vf_detection.py` y `config/ecg_algorithm_parameters.json`. El flujo probado es:
+
+```text
+ECGSignal -> process_ecg -> detect_qrs -> classify_ecg
+          -> categorias ECG -> Monitor -> reglas -> maquina de estados
+```
+
+Las pruebas cubren señales organizadas, actividad desorganizada sintética, constantes, cortas, valores faltantes, saturación, reproducibilidad, intervalos RR e integración con `Monitor`. La ausencia de QRS en una señal sin actividad no activa `vf_compatible`.
+
+Los cortes `0.5–30 Hz` para análisis, `5–15 Hz` para QRS, ventana de 4 s, límites de calidad, pesos y umbrales espectrales son valores de ingeniería para desarrollo sintético. No son umbrales diagnósticos y requieren calibración independiente. `ecg_classification.json` no se modificó.
+
+`normal_sinus` es una categoría conservadora de software basada en QRS organizado y regularidad, no una demostración clínica de ritmo sinusal. `vf_compatible` describe únicamente compatibilidad con el método experimental. `VF_CARDIAC_ARREST` sigue dependiendo de pulso, respuesta y respiración independientes.
+
+No se implementó aún un cargador WFDB ni se reportaron métricas sobre registros reales. Las fuentes candidatas son CUDB y MIT-BIH Malignant Ventricular Ectopy. La transición `NORMAL_MONITORING → ABNORMAL_RHYTHM` continúa rechazada por configuración y no fue alterada automáticamente.
+
+## 11. Criterio de continuación
+
+El siguiente cambio debería integrar una ruta WFDB reproducible, separar desarrollo/evaluación por registro, calibrar los parámetros experimentales y revisar resultados con especialistas. No debe presentar `vf_compatible` como diagnóstico clínico.
 
