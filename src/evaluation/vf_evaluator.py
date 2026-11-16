@@ -117,6 +117,19 @@ def evaluate_records(records: Iterable[PhysioNetRecord], window_seconds: float =
     metadata = {
         "datasets": sorted({item.dataset for item in all_segments}),
         "records": sorted({f"{item.dataset}:{item.record_id}" for item in all_segments}),
+        "record_metadata": [
+            {
+                "dataset": record.dataset.key,
+                "dataset_version": record.dataset.version,
+                "record_id": record.record_id,
+                "sampling_rate_hz": record.signal.sampling_rate_hz,
+                "amplitude_unit": record.signal.amplitude_unit,
+                "channel_index": record.channel_index,
+                "channel_name": record.channel_name,
+                "record_length_samples": record.record_length_samples,
+            }
+            for record in record_list
+        ],
         "window_seconds": window_seconds,
         "overlap": overlap,
         "detector_parameters_version": load_ecg_parameters().get("version"),
@@ -245,7 +258,7 @@ def compute_temporal_summary(results: Sequence[SegmentEvaluation]) -> tuple[Mapp
                 "annotation_boundary_approximate": dataset == "cudb",
             })
         for item in ordered:
-            if item.prediction == "VF" and item.reference_label != "VF":
+            if item.prediction == "VF" and item.reference_label == "NON_VF":
                 summaries.append({
                     "dataset": dataset,
                     "record_id": record_id,

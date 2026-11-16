@@ -26,3 +26,11 @@ def test_transition_window_is_ambiguous_not_forced_into_binary_class() -> None:
 
     normalized = tuple(RhythmInterval(*item, "fixture") for item in intervals)
     assert label_window(500, 1000, normalized)[0] == "AMBIGUOUS"
+
+
+def test_cudb_pre_vf_interval_can_use_documented_normal_baseline() -> None:
+    from src.datasets.rhythm_annotations import build_rhythm_intervals
+
+    intervals = build_rhythm_intervals(parse_annotation_rows(((1000, "VF"),), "cudb"), 2000, initial_label="NON_VF", initial_rhythm="N")
+    assert intervals[0].label == "NON_VF"
+    assert intervals[0].rhythm == "N"

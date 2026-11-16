@@ -10,7 +10,8 @@ import sys
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from src.evaluation.reporting import write_figures
-from src.evaluation.vf_evaluator import evaluate_physionet, save_report
+from src.evaluation.vf_evaluator import evaluate_records, save_report
+from src.datasets.physionet_loader import load_record
 
 
 def main() -> int:
@@ -23,9 +24,10 @@ def main() -> int:
     parser.add_argument("--overlap", type=float, default=0.0)
     parser.add_argument("--output", default="data/processed/vf_evaluation")
     args = parser.parse_args()
-    report = evaluate_physionet(args.dataset, args.records, local_root=args.local_root, channel=args.channel, window_seconds=args.window_seconds, overlap=args.overlap)
+    records = tuple(load_record(args.dataset, record_id, local_root=args.local_root, channel=args.channel) for record_id in args.records)
+    report = evaluate_records(records, window_seconds=args.window_seconds, overlap=args.overlap)
     json_path, csv_path = save_report(report, args.output)
-    figures = write_figures(report, args.output)
+    figures = write_figures(report, args.output, records, args.window_seconds, args.overlap)
     print(f"Saved report: {json_path}")
     print(f"Saved segments: {csv_path}")
     print("Saved figures:")

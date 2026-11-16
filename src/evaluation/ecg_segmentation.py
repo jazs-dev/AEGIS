@@ -47,7 +47,12 @@ def segment_record(record: PhysioNetRecord, window_seconds: float = 4.0, overlap
         raise ValueError("overlap must be in the interval [0, 1)")
     width = int(round(window_seconds * record.signal.sampling_rate_hz))
     step = max(1, int(round(width * (1.0 - overlap))))
-    intervals = build_rhythm_intervals(record.annotations, record.record_length_samples)
+    intervals = build_rhythm_intervals(
+        record.annotations,
+        record.record_length_samples,
+        initial_label="NON_VF" if record.dataset.key == "cudb" else "AMBIGUOUS",
+        initial_rhythm="N" if record.dataset.key == "cudb" else "UNKNOWN",
+    )
     segments: list[ECGSegment] = []
     for start in range(0, record.record_length_samples - width + 1, step):
         end = start + width

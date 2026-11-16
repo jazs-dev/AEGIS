@@ -278,3 +278,5 @@ El informe también resume episodios temporales: inicio anotado, primera detecci
 
 En este entorno no se pudieron descargar registros reales porque falló la resolución DNS hacia `physionet.org`. No se han generado métricas reales ni se presentan resultados inventados. Las pruebas usan fixtures WFDB sintéticos pequeños para validar lectura, anotaciones, segmentación, métricas, reportes y conexión con el detector.
 
+Posteriormente se utilizó el endpoint S3 público oficial de PhysioNet. Se evaluaron seis registros reales (VFDB `422`, `424`, `426`, `430`; CUDB `cu01`, `cu03`) con checksums oficiales verificados. El resultado global fue TP=445, FP=290, TN=1008, FN=197, sensibilidad=0.6931, especificidad=0.7766, precisión=0.6054, F1=0.6463 y 90 abstenciones sobre 2,030 ventanas binarias. El informe y las figuras están en `docs/vf_baseline_results.md` y `data/processed/vf_evaluation/combined_baseline_20261115_with_examples/`. Es un baseline preliminar, no validación clínica.
+
